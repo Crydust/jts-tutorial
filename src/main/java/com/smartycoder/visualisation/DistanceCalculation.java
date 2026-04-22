@@ -22,6 +22,10 @@ import com.smartycoder.ui.JTSVisualisationPanel;
  */
 public class DistanceCalculation {
 
+	static {
+		System.setProperty("sun.java2d.uiScale", "2");
+	}
+
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 
