@@ -1,132 +1,65 @@
 package com.smartycoder.visualisation;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Graphics;
-
-import javax.swing.JFrame;
-
+import com.smartycoder.ui.DrawLineString;
+import com.smartycoder.ui.DrawMultiPoint;
+import com.smartycoder.ui.DrawMultilineText;
+import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.densify.Densifier;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.MultiPoint;
 
-import com.smartycoder.ui.DrawingCommand;
-import com.smartycoder.ui.JTSVisualisationPanel;
+import java.awt.Color;
+
 /**
- * 
+ *
  * @see https://www.smartycoder.com
  *
  */
 public class GeometryDensifier {
 
-	static {
-		System.setProperty("sun.java2d.uiScale", "2");
-	}
+    public static void main(String[] args) {
+        GeometryFactory geometryFactory = new GeometryFactory();
 
-	public static void main(String[] args) {
+        Coordinate[] coordinates = {
+                new Coordinate(50, 20),
+                new Coordinate(70, 70),
+                new Coordinate(90, 50),
+                new Coordinate(110, 80),
+                new Coordinate(120, 60),
+                new Coordinate(150, 60),
+                new Coordinate(175, 120),
+                new Coordinate(200, 150),
+                new Coordinate(220, 100),
+                new Coordinate(230, 130),
+                new Coordinate(260, 80),
+                new Coordinate(310, 110),
+        };
+        LineString lineString = geometryFactory.createLineString(coordinates);
+        Densifier densifier = new Densifier(lineString);
+        densifier.setDistanceTolerance(15);
+        LineString denserLineString = (LineString) densifier.getResultGeometry();
+        System.out.println("original line coordinate size : " + coordinates.length);
+        System.out.println("densified line coordinate size " + denserLineString.getCoordinates().length);
+        MultiPoint originalPoints = geometryFactory.createMultiPointFromCoords(coordinates);
+        Coordinate[] denserCoords = denserLineString.getCoordinates();
+        Coordinate[] shiftedCoords = new Coordinate[denserCoords.length];
+        for (int i = 0; i < denserCoords.length; i++) {
+            shiftedCoords[i] = new Coordinate(denserCoords[i].getX(), denserCoords[i].getY() + 100);
+        }
+        LineString shiftedDenserLineString = geometryFactory.createLineString(shiftedCoords);
+        MultiPoint denserPoints = geometryFactory.createMultiPointFromCoords(shiftedCoords);
 
-		EventQueue.invokeLater(new Runnable() {
+        VisualisationUtil.show(
+                "JTS Visualisation - Geometry Densifier",
+                new DrawLineString(lineString, Color.BLUE, null),
+                new DrawMultiPoint(originalPoints, Color.BLUE, null),
+                new DrawLineString(shiftedDenserLineString, Color.RED, null),
+                new DrawMultiPoint(denserPoints, Color.RED, null),
+                new DrawMultilineText("original line coordinate size " + lineString.getNumPoints() + "\n" +
+                        "densified line coordinate size " + denserLineString.getNumPoints(), 60, 300, Color.WHITE)
+        );
+    }
 
-			public void run() {
-
-				JTSVisualisationPanel panel = new JTSVisualisationPanel();
-
-				JFrame frame = new JFrame("JTS Visualisation - Geometry Densifier");
-				frame.setLayout(new BorderLayout());
-				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-				frame.add(panel, BorderLayout.CENTER);
-
-				frame.pack();
-				frame.setSize(450, 450);
-				frame.setVisible(true);
-
-				GeometryFactory geometryFactory = new GeometryFactory();
-
-				Coordinate[] coordinates = new Coordinate[] { new Coordinate(50, 20), new Coordinate(70, 70),
-						new Coordinate(90, 50), 
-						new Coordinate(110, 80),
-						new Coordinate(120, 60), 
-						new Coordinate(150, 60), new Coordinate(175, 120),
-						new Coordinate(200, 150), new Coordinate(220, 100), new Coordinate(230, 130),
-						new Coordinate(260, 80), new Coordinate(310, 110) };
-
-				LineString lineString = geometryFactory.createLineString(coordinates);
-				
-				Densifier densifier = new Densifier(lineString);
-
-				densifier.setDistanceTolerance(15);
-				
-				LineString denserLineString = (LineString) densifier.getResultGeometry();
-			
-				System.out.println("original line coordinate size : " + coordinates.length);
-				
-				System.out.println("densified line coordinate size " + denserLineString.getCoordinates().length);
-
-				panel.addDrawCommand(new DrawingCommand() {
-
-					@Override
-					public void doDrawing(Graphics g) {
-
-						Coordinate[] coords = lineString.getCoordinates();
-
-						g.setColor(Color.BLUE);
-
-						int[] xler = new int[coords.length];
-						int[] yler = new int[coords.length];
-
-						for (int i = 0; i < coords.length - 1; i++) {
-							xler[i] = (int) coords[i].getX();
-							yler[i] = (int) coords[i].getY();
-
-							xler[i + 1] = (int) coords[i + 1].getX();
-							yler[i + 1] = (int) coords[i + 1].getY();
-
-							g.drawLine(xler[i], yler[i], xler[i + 1], yler[i + 1]);
-							
-							// Just to draw line thicker, draw the same line one pixel below 
-							g.drawLine(xler[i], yler[i]+1, xler[i + 1], yler[i + 1]+1);
-							
-							g.fillOval(xler[i], yler[i], 8, 8);
-
-						}
-
-						g.setColor(Color.RED);
-
-						coords = denserLineString.getCoordinates();
-
-						xler = new int[coords.length];
-						yler = new int[coords.length];
-
-						for (int i = 0; i < coords.length - 1; i++) {
-							xler[i] = (int) coords[i].getX();
-							yler[i] = (int) coords[i].getY();
-
-							xler[i + 1] = (int) coords[i + 1].getX();
-							yler[i + 1] = (int) coords[i + 1].getY();
-
-							
-							// To understand well the difference, not draw top of the original
-							// Just draw simplified version 100 pixel below
-							g.drawLine(xler[i], yler[i]+ 100, xler[i + 1], yler[i + 1] + 100);
-							g.drawLine(xler[i], yler[i]+ 101, xler[i + 1], yler[i + 1] + 101);
-							
-							g.fillOval(xler[i], yler[i] + 100, 8, 8);
-
-						}
-
-						g.setColor(Color.white);
-
-						g.drawString("original line coordinate size " + lineString.getNumPoints(), 60, 300);
-
-						g.drawString("densified line coordinate size " + denserLineString.getNumPoints(), 60, 330);
-					}
-				});
-
-			}
-		});
-
-	}
 }

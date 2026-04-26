@@ -1,12 +1,15 @@
 package com.smartycoder.visualisation;
 
-import com.smartycoder.ui.JTSVisualisationPanel;
+import com.smartycoder.ui.DrawMultilineText;
+import com.smartycoder.ui.DrawPolygon;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 
-import java.awt.*;
-import java.util.Arrays;
+import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.colorWithAlpha;
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 /**
  *
@@ -15,62 +18,35 @@ import java.util.Arrays;
  */
 public class IntersectionAreaCalculation {
 
-    static {
-        System.setProperty("sun.java2d.uiScale", "2");
-    }
+    public static void main(String[] args) {
+        GeometryFactory geometryFactory = new GeometryFactory();
 
-    static void main() {
+        Coordinate[] blueCoordinates = {
+                new Coordinate(150, 60),
+                new Coordinate(325, 180),
+                new Coordinate(90, 150),
+                new Coordinate(150, 60),
+        };
+        Coordinate[] yellowCoordinates = {
+                new Coordinate(210, 120),
+                new Coordinate(350, 120),
+                new Coordinate(400, 210),
+                new Coordinate(250, 300),
+                new Coordinate(180, 150),
+                new Coordinate(210, 120),
+        };
+        Polygon bluePolygon = geometryFactory.createPolygon(blueCoordinates);
+        Polygon yellowPolygon = geometryFactory.createPolygon(yellowCoordinates);
+        Polygon intersectionArea = (Polygon) yellowPolygon.intersection(bluePolygon);
 
-        EventQueue.invokeLater(() -> {
-
-            JTSVisualisationPanel panel = new JTSVisualisationPanel();
-
-            String title = "JTS Visualisation - Intersection Area Calculation";
-            panel.show(title);
-
-            GeometryFactory geometryFactory = new GeometryFactory();
-
-            Coordinate[] blueCoordinates = {
-                    new Coordinate(150, 60),
-                    new Coordinate(325, 180),
-                    new Coordinate(90, 150),
-                    new Coordinate(150, 60)
-            };
-
-            Coordinate[] yellowCoordinates = {
-                    new Coordinate(210, 120),
-                    new Coordinate(350, 120),
-                    new Coordinate(400, 210),
-                    new Coordinate(250, 300),
-                    new Coordinate(180, 150),
-                    new Coordinate(210, 120)
-            };
-
-            Polygon bluePolygon = geometryFactory.createPolygon(blueCoordinates);
-            Polygon yellowPolygon = geometryFactory.createPolygon(yellowCoordinates);
-            Polygon intersectionArea = (Polygon) yellowPolygon.intersection(bluePolygon);
-
-            panel.addDrawCommand(g -> {
-                fillPolygon(g, Color.BLUE, bluePolygon);
-                fillPolygon(g, Color.YELLOW, yellowPolygon);
-                fillPolygon(g, Color.RED, intersectionArea);
-
-                g.setColor(Color.white);
-                g.drawString("The intersection area of Blue and Yellow polygons", 60, 330);
-                g.drawString("is painted in RED color.", 60, 350);
-            });
-
-        });
+        show(
+                "JTS Visualisation - Intersection Area Calculation",
+                new DrawPolygon(bluePolygon, null, colorWithAlpha(Color.BLUE, 127), null),
+                new DrawPolygon(yellowPolygon, null, colorWithAlpha(Color.YELLOW, 127), null),
+                new DrawPolygon(intersectionArea, null, colorWithAlpha(Color.RED, 127), null),
+                new DrawMultilineText("The intersection area of Blue and Yellow polygons\nis painted in RED color.", 60, 330, Color.WHITE)
+        );
 
     }
 
-    private static void fillPolygon(Graphics g, Color color, Polygon polygon) {
-        Coordinate[] coordinates = polygon.getCoordinates();
-        int[] xPoints = Arrays.stream(coordinates).mapToInt(it -> (int) it.getX()).toArray();
-        int[] yPoints = Arrays.stream(coordinates).mapToInt(it -> (int) it.getY()).toArray();
-        int nPoints = coordinates.length;
-        Color translucentColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 127);
-        g.setColor(translucentColor);
-        g.fillPolygon(xPoints, yPoints, nPoints);
-    }
 }

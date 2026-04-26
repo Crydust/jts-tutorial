@@ -1,111 +1,53 @@
 package com.smartycoder.visualisation;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Graphics;
-
-import javax.swing.JFrame;
-
+import com.smartycoder.ui.DrawLineString;
+import com.smartycoder.ui.DrawMultilineText;
+import com.smartycoder.ui.DrawPoint;
+import com.smartycoder.ui.DrawPolygon;
+import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.operation.distance.DistanceOp;
 
-import com.smartycoder.ui.DrawingCommand;
-import com.smartycoder.ui.JTSVisualisationPanel;
+import java.awt.Color;
+
 /**
- * 
+ *
  * @see https://www.smartycoder.com
  *
  */
 public class DistanceCalculation {
 
-	static {
-		System.setProperty("sun.java2d.uiScale", "2");
-	}
+    public static void main(String[] args) {
+        GeometryFactory geometryFactory = new GeometryFactory();
 
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
+        Coordinate[] coordinates = {
+                new Coordinate(250, 60),
+                new Coordinate(300, 150),
+                new Coordinate(190, 150),
+                new Coordinate(250, 60),
+        };
+        Polygon polygon = geometryFactory.createPolygon(coordinates);
+        Point point = geometryFactory.createPoint(new Coordinate(100, 100));
+        double distance = polygon.distance(point);
+        DistanceOp op = new DistanceOp(polygon, point);
+        Coordinate[] nearestPoints = op.nearestPoints();
+        boolean isWithinDistance103 = point.isWithinDistance(polygon, 103);
+        boolean isWithinDistance102 = point.isWithinDistance(polygon, 102);
+        LineString distanceLine = geometryFactory.createLineString(nearestPoints);
 
-			public void run() {
+        VisualisationUtil.show(
+                "JTS Visualisation - Distance Calculation",
+                new DrawPolygon(polygon, null, Color.BLUE, null),
+                new DrawPoint(point, Color.WHITE, null),
+                new DrawLineString(distanceLine, Color.WHITE, null),
+                new DrawMultilineText("Calculated Distance: " + distance + "\n" +
+                        "Is Within Distance 103? " + isWithinDistance103 + "\n" +
+                        "Is Within Distance 102? " + isWithinDistance102, 70, 200, Color.WHITE)
+        );
+    }
 
-				JTSVisualisationPanel panel = new JTSVisualisationPanel();
-
-				JFrame frame = new JFrame("JTS Visualisation - Distance Calculation");
-				frame.setLayout(new BorderLayout());
-				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-				frame.add(panel, BorderLayout.CENTER);
-
-				frame.pack();
-				frame.setSize(450, 450);
-				frame.setVisible(true);
-
-				GeometryFactory geometryFactory = new GeometryFactory();
-
-				Coordinate[] coordinates = new Coordinate[] { new Coordinate(250, 60), new Coordinate(300, 150),  new Coordinate(190, 150),new Coordinate(250, 60)};
-
-				Polygon polygon = geometryFactory.createPolygon(coordinates);
-				
-				Point point = geometryFactory.createPoint(new Coordinate(100, 100));
-				
-				double distance = polygon.distance(point);
-				
-				DistanceOp op = new DistanceOp(polygon, point);
-				
-				Coordinate[] nearestPoints = op.nearestPoints();
-				
-				boolean isWithinDistance103 = point.isWithinDistance(polygon, 103);
-				
-				boolean isWithinDistance102 = point.isWithinDistance(polygon, 102);
-
-				panel.addDrawCommand(new DrawingCommand() {
-
-					@Override
-					public void doDrawing(Graphics g) {
-						
-						Coordinate[] coords = polygon.getCoordinates();
-						
-						int[] xler = new int[coords.length];
-						int[] yler = new int[coords.length];
-						
-						for (int i = 0; i < coords.length; i++) {
-							xler[i] = (int) coords[i].getX();
-							yler[i] = (int) coords[i].getY();
-						}
-
-						g.setColor(Color.BLUE);
-						
-						g.fillPolygon(xler, yler, coords.length);
-
-						g.setColor(Color.WHITE);
-						
-						g.drawString("(" + xler[0] + ", " + yler[0] + ")"  , 240, 50);
-						
-						g.drawString("(" + xler[1] + ", " + yler[1] + ")"  , 290, 165);
-						
-						g.drawString("(" + xler[2] + ", " + yler[2] + ")"  , 180, 165);
-						
-						g.drawString("(" + (int)point.getX() + ", " + (int)point.getY() + ")"  , 90, 90);
-						
-						g.fillRect((int)point.getX(), (int)point.getY(), 4, 4);
-						
-						g.drawString("Calculated Distance\n " + distance, 70, 200);
-						
-						g.drawString("Is Within Distance 103?\n " + isWithinDistance103, 70, 220);
-						
-						g.drawString("Is Within Distance 102?\n " + isWithinDistance102, 70, 240);
-
-						
-						g.drawLine((int) nearestPoints[0].getX(),(int) nearestPoints[0].getY(),(int) nearestPoints[1].getX(),(int) nearestPoints[1].getY());
-
-					}
-				});
-
-			}
-		});
-
-	}
 }

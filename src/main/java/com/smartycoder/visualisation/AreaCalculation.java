@@ -1,89 +1,40 @@
 package com.smartycoder.visualisation;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Graphics;
-
-import javax.swing.JFrame;
-
+import com.smartycoder.ui.DrawMultilineText;
+import com.smartycoder.ui.DrawPolygon;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 
-import com.smartycoder.ui.DrawingCommand;
-import com.smartycoder.ui.JTSVisualisationPanel;
+import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.show;
+
 /**
- * 
+ *
  * @see https://www.smartycoder.com
  *
  */
 public class AreaCalculation {
 
-	static {
-		System.setProperty("sun.java2d.uiScale", "2");
-	}
+    public static void main(String[] args) {
+        GeometryFactory geometryFactory = new GeometryFactory();
 
-	public static void main(String[] args) {
+        Coordinate[] coordinates = {
+                new Coordinate(150, 60),
+                new Coordinate(200, 150),
+                new Coordinate(90, 150),
+                new Coordinate(150, 60),
+        };
+        Polygon polygon = geometryFactory.createPolygon(coordinates);
 
-		EventQueue.invokeLater(new Runnable() {
+        double area = polygon.getArea();
 
-			public void run() {
+        show(
+                "JTS Visualisation - Area Calculation",
+                new DrawPolygon(polygon, null, Color.BLUE, Color.WHITE),
+                new DrawMultilineText("Calculated Area\n " + area, 70, 190, Color.WHITE)
+        );
+    }
 
-				JTSVisualisationPanel panel = new JTSVisualisationPanel();
-
-				JFrame frame = new JFrame("JTS Visualisation - Area Calculation");
-				frame.setLayout(new BorderLayout());
-				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-				frame.add(panel, BorderLayout.CENTER);
-
-				frame.pack();
-				frame.setSize(450, 450);
-				frame.setVisible(true);
-
-				GeometryFactory geometryFactory = new GeometryFactory();
-
-				Coordinate[] coordinates = new Coordinate[] { new Coordinate(150, 60), new Coordinate(200, 150),  new Coordinate(90, 150),new Coordinate(150, 60)};
-
-				Polygon polygon = geometryFactory.createPolygon(coordinates);
-				
-				double area = polygon.getArea();
-
-				panel.addDrawCommand(new DrawingCommand() {
-
-					@Override
-					public void doDrawing(Graphics g) {
-						
-						Coordinate[] coords = polygon.getCoordinates();
-						
-						int[] xler = new int[coords.length];
-						int[] yler = new int[coords.length];
-						
-						for (int i = 0; i < coords.length; i++) {
-							xler[i] = (int) coords[i].getX();
-							yler[i] = (int) coords[i].getY();
-						}
-
-						g.setColor(Color.BLUE);
-						
-						g.fillPolygon(xler, yler, coords.length);
-
-						g.setColor(Color.WHITE);
-						
-						g.drawString("(" + xler[0] + ", " + yler[0] + ")"  , 140, 50);
-						
-						g.drawString("(" + xler[1] + ", " + yler[1] + ")"  , 190, 165);
-						
-						g.drawString("(" + xler[2] + ", " + yler[2] + ")"  , 80, 165);
-						
-						g.drawString("Calculated Area\n " + area, 70, 190);
-
-					}
-				});
-
-			}
-		});
-
-	}
 }

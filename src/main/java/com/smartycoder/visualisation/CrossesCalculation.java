@@ -1,155 +1,68 @@
 package com.smartycoder.visualisation;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Graphics;
-
-import javax.swing.JFrame;
-
+import com.smartycoder.ui.DrawLineString;
+import com.smartycoder.ui.DrawMultilineText;
+import com.smartycoder.ui.DrawPolygon;
+import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Polygon;
 
-import com.smartycoder.ui.DrawingCommand;
-import com.smartycoder.ui.JTSVisualisationPanel;
+import java.awt.Color;
+
 /**
- * 
+ *
  * @see https://www.smartycoder.com
  *
  */
 public class CrossesCalculation {
 
-	static {
-		System.setProperty("sun.java2d.uiScale", "2");
-	}
+    public static void main(String[] args) {
+        GeometryFactory geometryFactory = new GeometryFactory();
 
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
+        Coordinate[] coordinates1 = {
+                new Coordinate(60, 60),
+                new Coordinate(110, 110),
+                new Coordinate(155, 60),
+                new Coordinate(60, 60),
+        };
+        Coordinate[] coordinates2 = {
+                new Coordinate(150, 120),
+                new Coordinate(300, 120),
+                new Coordinate(300, 180),
+                new Coordinate(150, 180),
+                new Coordinate(150, 120),
+        };
+        Coordinate[] coordinates3 = {new Coordinate(40, 75), new Coordinate(350, 120)};
+        Coordinate[] coordinates4 = {new Coordinate(210, 160), new Coordinate(350, 250)};
+        Polygon poly1 = geometryFactory.createPolygon(coordinates1);
+        Polygon poly2 = geometryFactory.createPolygon(coordinates2);
+        LineString line1 = geometryFactory.createLineString(coordinates3);
+        LineString line2 = geometryFactory.createLineString(coordinates4);
 
-			public void run() {
+        System.out.println("poly1.crosses(line1)  " + (poly1.crosses(line1)));
+        System.out.println("-----------------");
+        System.out.println("line1.crosses(poly2)  " + (line1.crosses(poly2)));
+        System.out.println("-----------------");
+        System.out.println("line1.crosses(poly1)  " + (line1.crosses(poly1)));
+        System.out.println("-----------------");
+        System.out.println("poly2.crosses(line2)  " + poly2.crosses(line2));
+        System.out.println("-----------------");
+        System.out.println("line2.crosses(poly2)  " + line2.crosses(poly2));
 
-				JTSVisualisationPanel panel = new JTSVisualisationPanel();
+        VisualisationUtil.show(
+                "JTS Visualisation - Crosses Calculation",
+                new DrawPolygon(poly1, null, Color.BLUE, null),
+                new DrawPolygon(poly2, null, VisualisationUtil.colorWithAlpha(Color.YELLOW, 150), null),
+                new DrawLineString(line1, Color.WHITE, null),
+                new DrawLineString(line2, Color.WHITE, null),
+                new DrawMultilineText("poly1", 100, 80, Color.WHITE),
+                new DrawMultilineText("poly2", 160, 160, Color.WHITE),
+                new DrawMultilineText("line1", 310, 100, Color.WHITE),
+                new DrawMultilineText("line2", 310, 220, Color.WHITE),
+                new DrawMultilineText("poly1.crosses(line1)  " + (poly1.crosses(line1)) + "\nline1.crosses(poly2)  " + (line1.crosses(poly2)) + "\nline1.crosses(poly1)  " + (line1.crosses(poly1)) + "\npoly2.crosses(line2)  " + poly2.crosses(line2) + "\nline2.crosses(poly2)  " + line2.crosses(poly2), 50, 210, Color.WHITE)
+        );
+    }
 
-				JFrame frame = new JFrame("JTS Visualisation - Crosses Calculation");
-				frame.setLayout(new BorderLayout());
-				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-				frame.add(panel, BorderLayout.CENTER);
-
-				frame.pack();
-				frame.setSize(450, 450);
-				frame.setVisible(true);
-
-				GeometryFactory geometryFactory = new GeometryFactory();
-
-		        Coordinate[] coordinates1 = new Coordinate[] { new Coordinate(60, 60), new Coordinate(110, 110), new Coordinate(155, 60),
-		                new Coordinate(60, 60)};
-
-		        Coordinate[] coordinates2 = new Coordinate[] { new Coordinate(150, 120), new Coordinate(300, 120),
-		                new Coordinate(300, 180), new Coordinate(150, 180), new Coordinate(150, 120) };
-		        
-		        Coordinate[] coordinates3 = new Coordinate[] { new Coordinate(40, 75), new Coordinate(350, 120) };
-		        
-		        Coordinate[] coordinates4 = new Coordinate[] { new Coordinate(210, 160), new Coordinate(350, 250) };
-
-		        Polygon poly1 = geometryFactory.createPolygon(coordinates1);
-
-		        Polygon poly2 = geometryFactory.createPolygon(coordinates2);
-		        
-		        LineString line1 = geometryFactory.createLineString(coordinates3);
-		        
-		        LineString line2 = geometryFactory.createLineString(coordinates4);
-
-
-		        System.out.println("poly1.crosses(line1)  " + (poly1.crosses(line1)));
-		       
-		        System.out.println("-----------------");
-
-		        System.out.println("line1.crosses(poly2)  " + (line1.crosses(poly2)));
-	       
-		        System.out.println("-----------------");
-
-		        System.out.println("line1.crosses(poly1)  " + (line1.crosses(poly1)));
-		        
-		        System.out.println("-----------------");
-		        
-		        System.out.println("poly2.crosses(line2)  " + poly2.crosses(line2));
-		        
-		        System.out.println("-----------------");
-		        
-		        System.out.println("line2.crosses(poly2)  " + line2.crosses(poly2));
-
-				panel.addDrawCommand(new DrawingCommand() {
-
-					@Override
-					public void doDrawing(Graphics g) {
-						
-						Coordinate[] coords = poly1.getCoordinates();
-						
-						int[] xler = new int[coords.length];
-						int[] yler = new int[coords.length];
-						
-						for (int i = 0; i < coords.length; i++) {
-							xler[i] = (int) coords[i].getX();
-							yler[i] = (int) coords[i].getY();
-						}
-
-						g.setColor(Color.BLUE);
-						
-						g.fillPolygon(xler, yler, coords.length);
-						
-						coords = poly2.getCoordinates();
-
-						xler = new int[coords.length];
-						yler = new int[coords.length];
-						
-						for (int i = 0; i < coords.length; i++) {
-							xler[i] = (int) coords[i].getX();
-							yler[i] = (int) coords[i].getY();
-						}
-
-						g.setColor(new Color(Color.YELLOW.getRed(), Color.YELLOW.getGreen(),Color.YELLOW.getBlue(), 150));
-						
-						g.fillPolygon(xler, yler, coords.length);
-						
-						
-						g.setColor(Color.WHITE);
-						
-						g.drawString("poly1", 100, 80);
-						
-						g.setColor(Color.WHITE);
-						
-						g.drawString("poly2", 160, 160);
-						
-						coords = line1.getCoordinates();
-						
-						g.drawLine((int) coords[0].getX(),(int) coords[0].getY(),(int) coords[1].getX(),(int) coords[1].getY());
-						
-						coords = line2.getCoordinates();
-						
-						g.drawLine((int) coords[0].getX(),(int) coords[0].getY(),(int) coords[1].getX(),(int) coords[1].getY());
-						
-						g.drawString("line1", 310, 100);
-						
-						g.drawString("line2", 310, 220);
-						
-						
-						g.drawString("poly1.crosses(line1)  " + (poly1.crosses(line1)), 50, 210);
-						
-						g.drawString("line1.crosses(poly2)  " + (line1.crosses(poly2)), 50, 240);
-						
-						g.drawString("line1.crosses(poly1)  " + (line1.crosses(poly1)), 50, 270);
-						
-						g.drawString("poly2.crosses(line2)  " + poly2.crosses(line2), 50, 300);
-						
-						g.drawString("line2.crosses(poly2)  " + line2.crosses(poly2), 50, 330);
-					}
-				});
-
-			}
-		});
-
-	}
 }

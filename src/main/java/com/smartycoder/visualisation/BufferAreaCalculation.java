@@ -1,136 +1,53 @@
 package com.smartycoder.visualisation;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Graphics;
-
-import javax.swing.JFrame;
-
+import com.smartycoder.ui.DrawMultilineText;
+import com.smartycoder.ui.DrawPolygon;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 
-import com.smartycoder.ui.DrawingCommand;
-import com.smartycoder.ui.JTSVisualisationPanel;
+import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.colorWithAlpha;
+import static com.smartycoder.ui.VisualisationUtil.show;
+
 /**
- * 
+ *
  * @see https://www.smartycoder.com
  *
  */
 public class BufferAreaCalculation {
 
-	static {
-		System.setProperty("sun.java2d.uiScale", "2");
-	}
+    public static void main(String[] args) {
+        GeometryFactory geometryFactory = new GeometryFactory();
 
-	public static void main(String[] args) {
+        Coordinate[] bluePolygonCoordinates = {
+                new Coordinate(150, 60),
+                new Coordinate(325, 180),
+                new Coordinate(90, 150),
+                new Coordinate(150, 60),
+        };
+        Coordinate[] yellowPolygonCoordinates = {
+                new Coordinate(210, 120),
+                new Coordinate(350, 120),
+                new Coordinate(400, 210),
+                new Coordinate(250, 300),
+                new Coordinate(180, 150),
+                new Coordinate(210, 120),
+        };
+        Polygon bluePolygon = geometryFactory.createPolygon(bluePolygonCoordinates);
+        Polygon yellowPolygon = geometryFactory.createPolygon(yellowPolygonCoordinates);
+        Polygon bufferedYellowPolygon = (Polygon) yellowPolygon.buffer(30);
+        Polygon bufferedBluePolygon = (Polygon) bluePolygon.buffer(30);
 
-		EventQueue.invokeLater(new Runnable() {
+        show(
+                "JTS Visualisation - Buffer Area Calculation",
+                new DrawPolygon(bufferedYellowPolygon, null, colorWithAlpha(Color.CYAN, 220), null),
+                new DrawPolygon(yellowPolygon, null, colorWithAlpha(Color.YELLOW, 170), Color.WHITE),
+                new DrawPolygon(bufferedBluePolygon, null, colorWithAlpha(Color.RED, 130), null),
+                new DrawPolygon(bluePolygon, null, colorWithAlpha(Color.BLUE, 160), Color.WHITE),
+                new DrawMultilineText("30 unit buffered polygons of yellow and blue polygons", 60, 350, Color.WHITE)
+        );
+    }
 
-			public void run() {
-
-				JTSVisualisationPanel panel = new JTSVisualisationPanel();
-
-				JFrame frame = new JFrame("JTS Visualisation - Buffer Area Calculation");
-				frame.setLayout(new BorderLayout());
-				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-				frame.add(panel, BorderLayout.CENTER);
-
-				frame.pack();
-				frame.setSize(450, 450);
-				frame.setVisible(true);
-
-				GeometryFactory geometryFactory = new GeometryFactory();
-
-				Coordinate[] coordinates = new Coordinate[] { new Coordinate(150, 60), 
-						new Coordinate(325, 180),new Coordinate(90, 150), new Coordinate(150, 60)};
-
-				Coordinate[] coordinates2 = new Coordinate[] { new Coordinate(210, 120), new Coordinate(350, 120),
-						new Coordinate(400, 210),new Coordinate(250, 300), new Coordinate(180, 150), new Coordinate(210, 120)};
-				
-				Polygon bluePolygon = geometryFactory.createPolygon(coordinates);
-				
-				Polygon yellowPolygon = geometryFactory.createPolygon(coordinates2);
-				
-				Polygon bufferedYellowPolygon = (Polygon) yellowPolygon.buffer(30);
-				
-				Polygon bufferedBluePolygon = (Polygon) bluePolygon.buffer(30);
-				
-				panel.addDrawCommand(new DrawingCommand() {
-
-					@Override
-					public void doDrawing(Graphics g) {
-						
-						Coordinate[] coords = bufferedYellowPolygon.getCoordinates();
-						
-						int[] xler = new int[coords.length];
-						int[] yler = new int[coords.length];
-						
-						for (int i = 0; i < coords.length; i++) {
-							xler[i] = (int) coords[i].getX();
-							yler[i] = (int) coords[i].getY();
-						}
-
-						g.setColor(new Color(Color.CYAN.getRed(), Color.CYAN.getGreen(),Color.CYAN.getBlue(), 220));
-						
-						g.fillPolygon(xler, yler, coords.length);
-						
-						coords = yellowPolygon.getCoordinates();
-						
-						xler = new int[coords.length];
-						yler = new int[coords.length];
-						
-						for (int i = 0; i < coords.length; i++) {
-							xler[i] = (int) coords[i].getX();
-							yler[i] = (int) coords[i].getY();
-						}
-
-						g.setColor(new Color(Color.YELLOW.getRed(), Color.YELLOW.getGreen(),Color.YELLOW.getBlue(), 170));
-						
-						g.fillPolygon(xler, yler, coords.length);
-						
-						coords = bufferedBluePolygon.getCoordinates();
-						
-						xler = new int[coords.length];
-						yler = new int[coords.length];
-						
-						for (int i = 0; i < coords.length; i++) {
-							xler[i] = (int) coords[i].getX();
-							yler[i] = (int) coords[i].getY();
-						}
-
-						g.setColor(new Color(Color.RED.getRed(), Color.RED.getGreen(),Color.RED.getBlue(), 130));
-						
-						g.fillPolygon(xler, yler, coords.length);
-						
-						
-						coords = bluePolygon.getCoordinates();
-						
-						xler = new int[coords.length];
-						yler = new int[coords.length];
-						
-						for (int i = 0; i < coords.length; i++) {
-							xler[i] = (int) coords[i].getX();
-							yler[i] = (int) coords[i].getY();
-						}
-
-						g.setColor(new Color(Color.BLUE.getRed(), Color.BLUE.getGreen(),Color.BLUE.getBlue(), 160));
-						
-						g.fillPolygon(xler, yler, coords.length);
-						
-						g.setColor(Color.WHITE);
-						
-						g.drawString("30 unit buffered polygons of yellow and blue polygons", 60, 350);
-						
-
-						
-					}
-				});
-
-			}
-		});
-
-	}
 }
