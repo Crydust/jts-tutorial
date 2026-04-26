@@ -2,12 +2,13 @@ package com.smartycoder.visualisation;
 
 import com.smartycoder.ui.DrawMultilineText;
 import com.smartycoder.ui.DrawPolygon;
-import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 
 import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 /**
  *
@@ -39,7 +40,7 @@ public class CoversCalculation {
         boolean quadrilateralCoversPolygon = quadrilateral.covers(triangle);
         boolean polygonCoveredByQuadrilateral = triangle.coveredBy(quadrilateral);
 
-        VisualisationUtil.show(
+        show(
                 "JTS Visualisation - Covers Calculation",
                 new DrawPolygon(quadrilateral, null, Color.GREEN, Color.WHITE),
                 new DrawPolygon(triangle, null, Color.BLUE, Color.BLACK),

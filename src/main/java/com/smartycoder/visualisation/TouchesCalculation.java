@@ -2,12 +2,14 @@ package com.smartycoder.visualisation;
 
 import com.smartycoder.ui.DrawMultilineText;
 import com.smartycoder.ui.DrawPolygon;
-import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 
 import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.colorWithAlpha;
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 /**
  *
@@ -48,11 +50,11 @@ public class TouchesCalculation {
         System.out.println("poly2.intersects(poly3)  " + (poly2.intersects(poly3)));
         System.out.println("poly2.overlaps(poly3)  " + (poly2.overlaps(poly3)));
 
-        VisualisationUtil.show(
+        show(
                 "JTS Visualisation - Touches Calculation",
                 new DrawPolygon(poly1, null, Color.BLUE, null),
                 new DrawPolygon(poly2, null, Color.RED, null),
-                new DrawPolygon(poly3, null, VisualisationUtil.colorWithAlpha(Color.YELLOW, 150), null),
+                new DrawPolygon(poly3, null, colorWithAlpha(Color.YELLOW, 150), null),
                 new DrawMultilineText("poly1", 100, 80, Color.WHITE),
                 new DrawMultilineText("poly2", 220, 80, Color.WHITE),
                 new DrawMultilineText("poly3", 160, 160, Color.WHITE),

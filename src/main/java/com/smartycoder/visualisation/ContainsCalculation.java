@@ -3,13 +3,14 @@ package com.smartycoder.visualisation;
 import com.smartycoder.ui.DrawMultilineText;
 import com.smartycoder.ui.DrawPoint;
 import com.smartycoder.ui.DrawPolygon;
-import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 
 import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 /**
  *
@@ -35,7 +36,7 @@ public class ContainsCalculation {
         boolean point1WithinPolygon = point.within(polygon);
         boolean point2WithinPolygon = point2.within(polygon);
 
-        VisualisationUtil.show(
+        show(
                 "JTS Visualisation - Contains Calculation",
                 new DrawPolygon(polygon, null, Color.BLUE, null),
                 new DrawPoint(point, Color.WHITE, null),

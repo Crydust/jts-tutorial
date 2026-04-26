@@ -3,13 +3,14 @@ package com.smartycoder.visualisation;
 import com.smartycoder.ui.DrawLineString;
 import com.smartycoder.ui.DrawMultilineText;
 import com.smartycoder.ui.DrawPolygon;
-import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Polygon;
 
 import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 /**
  *
@@ -41,13 +42,13 @@ public class LengthCalculation {
         Polygon polygon = geometryFactory.createPolygon(polygonCoordinates);
         double polygonPerimeter = polygon.getLength();
 
-        VisualisationUtil.show(
+        show(
                 "JTS Visualisation - Length Calculation",
                 new DrawLineString(lineString, Color.BLUE, null),
                 new DrawPolygon(polygon, null, Color.BLUE, null),
                 new DrawMultilineText("Calculated Length\n " + length, 70, 190, Color.WHITE),
                 new DrawMultilineText("Calculated Perimeter\n " + polygonPerimeter, 70, 380, Color.WHITE)
         );
-	}
+    }
 
 }

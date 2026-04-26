@@ -2,13 +2,14 @@ package com.smartycoder.visualisation;
 
 import com.smartycoder.ui.DrawLineString;
 import com.smartycoder.ui.DrawMultilineText;
-import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.simplify.DouglasPeuckerSimplifier;
 
 import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 /**
  *
@@ -41,7 +42,7 @@ public class GeometrySimplification {
         System.out.println("original line coordinate size : " + coordinates.length);
         System.out.println("simplified line coordinate size " + simplerLineString.getCoordinates().length);
 
-        VisualisationUtil.show(
+        show(
                 "JTS Visualisation - Douglas Peucker Geometry Simplification",
                 new DrawLineString(lineString, Color.BLUE, null),
                 new DrawLineString(simplerLineString, Color.RED, null),

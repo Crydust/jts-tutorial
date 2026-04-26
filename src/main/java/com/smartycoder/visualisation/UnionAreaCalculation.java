@@ -2,12 +2,14 @@ package com.smartycoder.visualisation;
 
 import com.smartycoder.ui.DrawMultilineText;
 import com.smartycoder.ui.DrawPolygon;
-import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 
 import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.colorWithAlpha;
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 /**
  *
@@ -27,9 +29,9 @@ public class UnionAreaCalculation {
         Polygon yellowPolygon = geometryFactory.createPolygon(coordinates2);
         Polygon unionPolygon = (Polygon) yellowPolygon.union(bluePolygon);
 
-        VisualisationUtil.show(
+        show(
                 "JTS Visualisation - Union Area Calculation",
-                new DrawPolygon(unionPolygon, null, VisualisationUtil.colorWithAlpha(Color.RED, 160), null),
+                new DrawPolygon(unionPolygon, null, colorWithAlpha(Color.RED, 160), null),
                 new DrawMultilineText("The polygon calculated by unioning two polygons.", 60, 330, Color.WHITE)
         );
     }

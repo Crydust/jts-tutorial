@@ -2,13 +2,13 @@ package com.smartycoder.visualisation;
 
 import com.smartycoder.ui.DrawLineString;
 import com.smartycoder.ui.DrawMultilineText;
-import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 
 import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 /**
  *
@@ -29,7 +29,7 @@ public class EqualsCalculation {
         System.out.println("(line1.equals((Geometry)line2)) " + (line1.equals(line2)));
         System.out.println("(line1.equalsExact(line2)) " + (line1.equalsExact(line2)));
 
-        VisualisationUtil.show(
+        show(
                 "JTS Visualisation - Equals Calculation",
                 new DrawLineString(line1, Color.RED, null),
                 new DrawLineString(line2, Color.BLUE, null),

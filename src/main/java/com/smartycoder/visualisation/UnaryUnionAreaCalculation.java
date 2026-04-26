@@ -2,13 +2,15 @@ package com.smartycoder.visualisation;
 
 import com.smartycoder.ui.DrawMultilineText;
 import com.smartycoder.ui.DrawPolygon;
-import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
 
 import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.colorWithAlpha;
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 /**
  *
@@ -29,9 +31,9 @@ public class UnaryUnionAreaCalculation {
         MultiPolygon multiPolygon = geometryFactory.createMultiPolygon(new Polygon[]{yellowPolygon, bluePolygon});
         Polygon unionPolygon = (Polygon) multiPolygon.union();
 
-        VisualisationUtil.show(
+        show(
                 "JTS Visualisation - Unary Union Area Calculation",
-                new DrawPolygon(unionPolygon, null, VisualisationUtil.colorWithAlpha(Color.CYAN, 220), null),
+                new DrawPolygon(unionPolygon, null, colorWithAlpha(Color.CYAN, 220), null),
                 new DrawMultilineText("Unary union operation on MultiPolygon:\nUnary union area.", 60, 330, Color.WHITE)
         );
     }

@@ -3,13 +3,14 @@ package com.smartycoder.visualisation;
 import com.smartycoder.ui.DrawLineString;
 import com.smartycoder.ui.DrawMultilineText;
 import com.smartycoder.ui.DrawPoint;
-import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
 
 import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 /**
  *
@@ -30,7 +31,7 @@ public class IntersectsCalculation {
         boolean line3DisjointLine1 = line3.disjoint(line1);
         boolean line3IntersectsLine1 = line3.intersects(line1);
 
-        VisualisationUtil.show(
+        show(
                 "JTS Visualisation - Intersects Calculation",
                 new DrawLineString(line1, Color.WHITE, null),
                 new DrawLineString(line2, Color.WHITE, null),

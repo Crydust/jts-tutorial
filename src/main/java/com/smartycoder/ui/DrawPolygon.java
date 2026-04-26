@@ -7,7 +7,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.util.Arrays;
 
-public record DrawPolygon(Polygon polygon, Color drawColor, Color fillColor, Color textColor) implements DrawingCommand {
+public record DrawPolygon(Polygon polygon, Color drawColor, Color fillColor,
+                          Color textColor) implements DrawingCommand {
 
     @Override
     public void doDrawing(Graphics g) {

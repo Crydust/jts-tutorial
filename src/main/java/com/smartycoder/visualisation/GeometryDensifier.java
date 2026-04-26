@@ -3,7 +3,6 @@ package com.smartycoder.visualisation;
 import com.smartycoder.ui.DrawLineString;
 import com.smartycoder.ui.DrawMultiPoint;
 import com.smartycoder.ui.DrawMultilineText;
-import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.densify.Densifier;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -11,6 +10,8 @@ import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiPoint;
 
 import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 /**
  *
@@ -51,7 +52,7 @@ public class GeometryDensifier {
         LineString shiftedDenserLineString = geometryFactory.createLineString(shiftedCoords);
         MultiPoint denserPoints = geometryFactory.createMultiPointFromCoords(shiftedCoords);
 
-        VisualisationUtil.show(
+        show(
                 "JTS Visualisation - Geometry Densifier",
                 new DrawLineString(lineString, Color.BLUE, null),
                 new DrawMultiPoint(originalPoints, Color.BLUE, null),

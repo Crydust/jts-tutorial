@@ -4,7 +4,7 @@ import com.smartycoder.ui.DrawLineString;
 import com.smartycoder.ui.DrawMultilineText;
 import com.smartycoder.ui.DrawPoint;
 import com.smartycoder.ui.DrawPolygon;
-import com.smartycoder.ui.VisualisationUtil;
+
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
@@ -13,6 +13,8 @@ import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.operation.distance.DistanceOp;
 
 import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 /**
  *
@@ -39,7 +41,7 @@ public class DistanceCalculation {
         boolean isWithinDistance102 = point.isWithinDistance(polygon, 102);
         LineString distanceLine = geometryFactory.createLineString(nearestPoints);
 
-        VisualisationUtil.show(
+        show(
                 "JTS Visualisation - Distance Calculation",
                 new DrawPolygon(polygon, null, Color.BLUE, null),
                 new DrawPoint(point, Color.WHITE, null),

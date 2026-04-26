@@ -3,13 +3,15 @@ package com.smartycoder.visualisation;
 import com.smartycoder.ui.DrawLineString;
 import com.smartycoder.ui.DrawMultilineText;
 import com.smartycoder.ui.DrawPolygon;
-import com.smartycoder.ui.VisualisationUtil;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Polygon;
 
 import java.awt.Color;
+
+import static com.smartycoder.ui.VisualisationUtil.colorWithAlpha;
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 /**
  *
@@ -51,17 +53,21 @@ public class CrossesCalculation {
         System.out.println("-----------------");
         System.out.println("line2.crosses(poly2)  " + line2.crosses(poly2));
 
-        VisualisationUtil.show(
+        show(
                 "JTS Visualisation - Crosses Calculation",
                 new DrawPolygon(poly1, null, Color.BLUE, null),
-                new DrawPolygon(poly2, null, VisualisationUtil.colorWithAlpha(Color.YELLOW, 150), null),
+                new DrawPolygon(poly2, null, colorWithAlpha(Color.YELLOW, 150), null),
                 new DrawLineString(line1, Color.WHITE, null),
                 new DrawLineString(line2, Color.WHITE, null),
                 new DrawMultilineText("poly1", 100, 80, Color.WHITE),
                 new DrawMultilineText("poly2", 160, 160, Color.WHITE),
                 new DrawMultilineText("line1", 310, 100, Color.WHITE),
                 new DrawMultilineText("line2", 310, 220, Color.WHITE),
-                new DrawMultilineText("poly1.crosses(line1)  " + (poly1.crosses(line1)) + "\nline1.crosses(poly2)  " + (line1.crosses(poly2)) + "\nline1.crosses(poly1)  " + (line1.crosses(poly1)) + "\npoly2.crosses(line2)  " + poly2.crosses(line2) + "\nline2.crosses(poly2)  " + line2.crosses(poly2), 50, 210, Color.WHITE)
+                new DrawMultilineText("poly1.crosses(line1)  " + (poly1.crosses(line1)) + "\n" +
+                        "line1.crosses(poly2)  " + (line1.crosses(poly2)) + "\n" +
+                        "line1.crosses(poly1)  " + (line1.crosses(poly1)) + "\n" +
+                        "poly2.crosses(line2)  " + poly2.crosses(line2) + "\n" +
+                        "line2.crosses(poly2)  " + line2.crosses(poly2), 50, 210, Color.WHITE)
         );
     }
 
