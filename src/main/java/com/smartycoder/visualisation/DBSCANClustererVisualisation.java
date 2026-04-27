@@ -3,13 +3,18 @@ package com.smartycoder.visualisation;
 import com.smartycoder.ui.DrawMultiPoint;
 import com.smartycoder.ui.DrawPolygon;
 import com.smartycoder.ui.DrawingCommand;
+import org.hipparchus.clustering.CentroidCluster;
 import org.hipparchus.clustering.Cluster;
 import org.hipparchus.clustering.Clusterable;
 import org.hipparchus.clustering.DBSCANClusterer;
+import org.hipparchus.clustering.FuzzyKMeansClusterer;
 import org.hipparchus.clustering.distance.EuclideanDistance;
+import org.locationtech.jts.coverage.CoverageUnion;
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.MultiPoint;
+import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
@@ -31,8 +36,8 @@ public class DBSCANClustererVisualisation {
         Point[] points = coordinatesToPoints(pointCount, coordinates, geometryFactory);
         MultiPoint multiPoint = geometryFactory.createMultiPoint(points);
 
-        List<Cluster<ClusterableCoordinate>> clusters = new DBSCANClusterer<ClusterableCoordinate>(
-                30, 5)
+        List<CentroidCluster<ClusterableCoordinate>> clusters = new FuzzyKMeansClusterer<ClusterableCoordinate>(
+                5, 3)
                 .cluster(coordinates.stream()
                         .map(ClusterableCoordinate::new)
                         .toList());
@@ -44,6 +49,14 @@ public class DBSCANClustererVisualisation {
             MultiPoint clusterMultiPoint = geometryFactory.createMultiPoint(new CoordinateArraySequence(clusterCoordinates));
             Polygon clusterPolygon = (Polygon) clusterMultiPoint.convexHull();
             clusterPolygons.add(clusterPolygon);
+        }
+
+        // CoverageUnion
+        MultiPolygon union = (MultiPolygon) CoverageUnion.union(clusterPolygons.toArray(new Polygon[0]));
+        clusterPolygons.clear();
+        for (int i = 0; i < union.getNumGeometries(); i++) {
+            Polygon polygon = (Polygon) union.getGeometryN(i);
+            clusterPolygons.add(polygon);
         }
 
         List<DrawingCommand> drawingCommands = new ArrayList<>();
