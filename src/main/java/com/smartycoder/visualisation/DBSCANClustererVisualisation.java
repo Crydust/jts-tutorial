@@ -15,6 +15,7 @@ import org.locationtech.jts.geom.MultiPoint;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
+import org.locationtech.jts.simplify.DouglasPeuckerSimplifier;
 
 import java.awt.Color;
 import java.nio.file.Path;
@@ -36,7 +37,7 @@ public class DBSCANClustererVisualisation {
         MultiPoint multiPoint = geometryFactory.createMultiPoint(points);
 
         List<CentroidCluster<ClusterableCoordinate>> clusters = new FuzzyKMeansClusterer<ClusterableCoordinate>(
-                7, 3)
+                8, 3)
                 .cluster(coordinates.stream()
                         .map(ClusterableCoordinate::new)
                         .toList());
@@ -203,7 +204,44 @@ public class DBSCANClustererVisualisation {
         }
 
         LinearRing ring = geometryFactory.createLinearRing(expandedCoords.toArray(new Coordinate[0]));
-        return geometryFactory.createPolygon(ring);
+        Polygon polygon = geometryFactory.createPolygon(ring);
+
+        polygon = simplifyPolygon(polygon, currentPolygon, allPolygons, currentIndex);
+
+        return polygon;
+    }
+
+    private static Polygon simplifyPolygon(Polygon polygon, Polygon originalPolygon,
+                                           List<Polygon> allPolygons, int currentIndex) {
+        // Simplify with a reasonable tolerance
+        DouglasPeuckerSimplifier simplifier = new DouglasPeuckerSimplifier(polygon);
+        simplifier.setDistanceTolerance(10.0); // Adjust for more/less smoothing
+        Geometry simplified = simplifier.getResultGeometry();
+
+        if (!(simplified instanceof Polygon simplifiedPolygon)) {
+            return polygon;
+        }
+
+        // Union with original to ensure it's at least as large
+        Geometry unioned = simplifiedPolygon.union(originalPolygon);
+        if (!(unioned instanceof Polygon unionedPolygon)) {
+            return polygon;
+        }
+
+        // Difference with all neighbor polygons to ensure no overlap
+        Polygon result = unionedPolygon;
+        for (int i = 0; i < allPolygons.size(); i++) {
+            if (i == currentIndex) continue;
+
+            Polygon neighbor = allPolygons.get(i);
+            Geometry differenced = result.difference(neighbor);
+
+            if (differenced instanceof Polygon diffPolygon) {
+                result = diffPolygon;
+            }
+        }
+
+        return result;
     }
 
     private static Coordinate findClosestPointOnPolygon(Point point, Polygon polygon) {
@@ -237,13 +275,13 @@ public class DBSCANClustererVisualisation {
         }
     }
 
-private static class PolygonDistance {
-    Polygon polygon;
-    double distance;
+    private static class PolygonDistance {
+        Polygon polygon;
+        double distance;
 
-    PolygonDistance(Polygon polygon, double distance) {
-        this.polygon = polygon;
-        this.distance = distance;
+        PolygonDistance(Polygon polygon, double distance) {
+            this.polygon = polygon;
+            this.distance = distance;
+        }
     }
-}
 }
