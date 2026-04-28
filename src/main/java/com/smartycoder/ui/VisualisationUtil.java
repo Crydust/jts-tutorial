@@ -17,12 +17,16 @@ import java.nio.file.Path;
 import java.util.Map;
 
 public final class VisualisationUtil {
+
+    static {
+        enableHighDpiRendering();
+    }
+
     private VisualisationUtil() {
         // NOOP
     }
 
     public static void show(String title, DrawingCommand... commands) {
-        enableHighDpiRendering();
         BufferedImage image = createImage(commands, true);
         show(title, image);
     }
