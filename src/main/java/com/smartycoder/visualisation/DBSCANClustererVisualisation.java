@@ -36,7 +36,7 @@ public class DBSCANClustererVisualisation {
         MultiPoint multiPoint = geometryFactory.createMultiPoint(points);
 
         List<CentroidCluster<ClusterableCoordinate>> clusters = new FuzzyKMeansClusterer<ClusterableCoordinate>(
-                5, 3)
+                15, 3)
                 .cluster(coordinates.stream()
                         .map(ClusterableCoordinate::new)
                         .toList());
@@ -164,12 +164,21 @@ public class DBSCANClustererVisualisation {
                     double dotProduct = outwardX * toNeighborX + outwardY * toNeighborY;
 
                     if (dotProduct > 0) {
-                        // Neighbor is in outward direction, move to midpoint
+                        // Neighbor is in outward direction, calculate midpoint
                         Coordinate expandedCoord = new Coordinate(
                                 (coord.x + closestPointOnNeighbor.x) / 2.0,
                                 (coord.y + closestPointOnNeighbor.y) / 2.0
                         );
-                        expandedCoords.add(expandedCoord);
+
+                        // Check if the new point is inside the original polygon
+                        Point expandedPoint = geometryFactory.createPoint(expandedCoord);
+                        if (currentPolygon.contains(expandedPoint)) {
+                            // New point is inside, keep original
+                            expandedCoords.add(coord);
+                        } else {
+                            // New point is outside, use it
+                            expandedCoords.add(expandedCoord);
+                        }
                     } else {
                         // Neighbor is in inward direction, keep original
                         expandedCoords.add(coord);
