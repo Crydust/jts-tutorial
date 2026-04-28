@@ -1,5 +1,6 @@
 package com.smartycoder.ui;
 
+import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
@@ -10,7 +11,9 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
 import java.util.Map;
 
 public final class VisualisationUtil {
@@ -20,11 +23,20 @@ public final class VisualisationUtil {
 
     public static void show(String title, DrawingCommand... commands) {
         enableHighDpiRendering();
-        BufferedImage image = createImage(commands);
+        BufferedImage image = createImage(commands, true);
         show(title, image);
     }
 
-    private static BufferedImage createImage(DrawingCommand[] commands) {
+    public static void saveAsFile(Path path, DrawingCommand... commands) {
+        BufferedImage image = createImage(commands, false);
+        try {
+            ImageIO.write(image, "PNG", path.toFile());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save image to " + path, e);
+        }
+    }
+
+    private static BufferedImage createImage(DrawingCommand[] commands, boolean drawAxis) {
         int width = 600, height = 600;
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
@@ -35,18 +47,20 @@ public final class VisualisationUtil {
             g.setColor(Color.DARK_GRAY);
             g.fillRect(0, 0, 600, 600);
 
-            // Draw x axis
-            g.setColor(Color.WHITE);
-            g.drawLine(10, 10, 600, 10);
-            for (int i = 10; i <= 600; i += 50) {
-                g.drawString(Integer.toString(i), i, 10);
-            }
+            if (drawAxis) {
+                // Draw x axis
+                g.setColor(Color.WHITE);
+                g.drawLine(10, 10, 600, 10);
+                for (int i = 10; i <= 600; i += 50) {
+                    g.drawString(Integer.toString(i), i, 10);
+                }
 
-            // Draw y axis
-            g.setColor(Color.WHITE);
-            g.drawLine(10, 10, 10, 600);
-            for (int i = 10; i <= 600; i += 50) {
-                g.drawString(Integer.toString(i), 10, i);
+                // Draw y axis
+                g.setColor(Color.WHITE);
+                g.drawLine(10, 10, 10, 600);
+                for (int i = 10; i <= 600; i += 50) {
+                    g.drawString(Integer.toString(i), 10, i);
+                }
             }
 
             // Reset default color
