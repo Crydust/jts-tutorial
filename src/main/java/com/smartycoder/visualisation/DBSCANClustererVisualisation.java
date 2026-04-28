@@ -7,6 +7,7 @@ import org.hipparchus.clustering.CentroidCluster;
 import org.hipparchus.clustering.Cluster;
 import org.hipparchus.clustering.Clusterable;
 import org.hipparchus.clustering.FuzzyKMeansClusterer;
+import org.locationtech.jts.coverage.CoverageUnion;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
@@ -16,15 +17,15 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
 import org.locationtech.jts.triangulate.VoronoiDiagramBuilder;
-import org.locationtech.jts.coverage.CoverageUnion;
 
 import java.awt.Color;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.smartycoder.ui.VisualisationUtil.show;
+import static com.smartycoder.ui.VisualisationUtil.saveAsFile;
 
 public class DBSCANClustererVisualisation {
 
@@ -106,10 +107,13 @@ public class DBSCANClustererVisualisation {
         }
 
         drawingCommands.add(new DrawMultiPoint(multiPoint, Color.WHITE, null));
-        show(
-                "JTS Visualisation - Convex Hull",
-                drawingCommands.toArray(new DrawingCommand[0])
-        );
+
+        saveAsFile(Path.of("target/cluster.png"), drawingCommands.toArray(new DrawingCommand[0]));
+
+//        show(
+//                "JTS Visualisation - Convex Hull",
+//                drawingCommands.toArray(new DrawingCommand[0])
+//        );
     }
 
 
