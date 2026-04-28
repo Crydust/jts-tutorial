@@ -36,7 +36,7 @@ public class DBSCANClustererVisualisation {
         MultiPoint multiPoint = geometryFactory.createMultiPoint(points);
 
         List<CentroidCluster<ClusterableCoordinate>> clusters = new FuzzyKMeansClusterer<ClusterableCoordinate>(
-                15, 3)
+                7, 3)
                 .cluster(coordinates.stream()
                         .map(ClusterableCoordinate::new)
                         .toList());
@@ -126,10 +126,9 @@ public class DBSCANClustererVisualisation {
             outwardX /= outwardLength;
             outwardY /= outwardLength;
 
-            // Find closest polygon for THIS specific coordinate
-            double minDistance = Double.MAX_VALUE;
-            Polygon nearestPolygon = null;
-            double maxCutoffDistance = 100; // Adjust this based on your coordinate scale
+            // Find 3 closest polygons for THIS specific coordinate
+            List<PolygonDistance> nearbyPolygons = new ArrayList<>();
+            double maxCutoffDistance = 50; // Adjust this based on your coordinate scale
 
             for (int i = 0; i < allPolygons.size(); i++) {
                 if (i == currentIndex) continue;
@@ -140,14 +139,21 @@ public class DBSCANClustererVisualisation {
                 // Only consider polygons within cutoff distance
                 if (distance > maxCutoffDistance) continue;
 
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestPolygon = otherPolygon;
-                }
+                nearbyPolygons.add(new PolygonDistance(otherPolygon, distance));
             }
 
-            if (nearestPolygon != null) {
-                // Find closest point on nearest polygon's boundary
+            // Sort by distance and keep top 3
+            nearbyPolygons.sort((a, b) -> Double.compare(a.distance, b.distance));
+            nearbyPolygons = nearbyPolygons.stream().limit(3).toList();
+
+            // Try to expand towards each candidate, use the best valid one
+            Coordinate bestExpandedCoord = null;
+            double bestDotProduct = -1;
+
+            for (PolygonDistance pd : nearbyPolygons) {
+                Polygon nearestPolygon = pd.polygon;
+
+                // Find closest point on this polygon's boundary
                 Coordinate closestPointOnNeighbor = findClosestPointOnPolygon(point, nearestPolygon);
 
                 // Vector from coord to closest point on neighbor
@@ -164,7 +170,7 @@ public class DBSCANClustererVisualisation {
                     double dotProduct = outwardX * toNeighborX + outwardY * toNeighborY;
 
                     if (dotProduct > 0) {
-                        // Neighbor is in outward direction, calculate midpoint
+                        // Calculate midpoint
                         Coordinate expandedCoord = new Coordinate(
                                 (coord.x + closestPointOnNeighbor.x) / 2.0,
                                 (coord.y + closestPointOnNeighbor.y) / 2.0
@@ -172,22 +178,21 @@ public class DBSCANClustererVisualisation {
 
                         // Check if the new point is inside the original polygon
                         Point expandedPoint = geometryFactory.createPoint(expandedCoord);
-                        if (currentPolygon.contains(expandedPoint)) {
-                            // New point is inside, keep original
-                            expandedCoords.add(coord);
-                        } else {
-                            // New point is outside, use it
-                            expandedCoords.add(expandedCoord);
+                        if (!currentPolygon.contains(expandedPoint)) {
+                            // Valid expansion found, prefer the one with highest dot product (most aligned with outward direction)
+                            if (dotProduct > bestDotProduct) {
+                                bestDotProduct = dotProduct;
+                                bestExpandedCoord = expandedCoord;
+                            }
                         }
-                    } else {
-                        // Neighbor is in inward direction, keep original
-                        expandedCoords.add(coord);
                     }
-                } else {
-                    expandedCoords.add(coord);
                 }
+            }
+
+            // Use the best expansion found, or keep original if none worked
+            if (bestExpandedCoord != null) {
+                expandedCoords.add(bestExpandedCoord);
             } else {
-                // No suitable neighbor found, keep original coordinate
                 expandedCoords.add(coord);
             }
         }
@@ -231,4 +236,14 @@ public class DBSCANClustererVisualisation {
             return new double[]{coordinate.x, coordinate.y};
         }
     }
+
+private static class PolygonDistance {
+    Polygon polygon;
+    double distance;
+
+    PolygonDistance(Polygon polygon, double distance) {
+        this.polygon = polygon;
+        this.distance = distance;
+    }
+}
 }
