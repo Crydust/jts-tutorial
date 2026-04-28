@@ -59,9 +59,9 @@ public class DBSCANClustererVisualisation {
         // Expand polygons to midpoints between neighbors
         List<Polygon> expandedPolygons = expandPolygonsToMidpoints(clusterPolygons, geometryFactory);
         // repeat for better coverage (this feels like a hack)
-        expandedPolygons = expandPolygonsToMidpoints(expandedPolygons, geometryFactory);
-        expandedPolygons = expandPolygonsToMidpoints(expandedPolygons, geometryFactory);
-        expandedPolygons = expandPolygonsToMidpoints(expandedPolygons, geometryFactory);
+//        expandedPolygons = expandPolygonsToMidpoints(expandedPolygons, geometryFactory);
+//        expandedPolygons = expandPolygonsToMidpoints(expandedPolygons, geometryFactory);
+//        expandedPolygons = expandPolygonsToMidpoints(expandedPolygons, geometryFactory);
 
         for (Polygon expandedPolygon : expandedPolygons) {
             drawingCommands.add(new DrawPolygon(expandedPolygon, Color.BLUE, null, null));
@@ -107,9 +107,11 @@ public class DBSCANClustererVisualisation {
         return expandedPolygons;
     }
 
+
     private static Polygon expandPolygonOutward(Polygon currentPolygon, List<Polygon> allPolygons, int currentIndex,
                                                 List<Coordinate> coords, GeometryFactory geometryFactory) {
         List<Coordinate> expandedCoords = new ArrayList<>();
+        List<Double> expansionDistances = new ArrayList<>();
 
         // Get the center of the current polygon
         Coordinate centerCoord = currentPolygon.getCentroid().getCoordinate();
@@ -124,6 +126,7 @@ public class DBSCANClustererVisualisation {
 
             if (outwardLength == 0) {
                 expandedCoords.add(coord);
+                expansionDistances.add(0.0);
                 continue;
             }
 
@@ -154,6 +157,7 @@ public class DBSCANClustererVisualisation {
             // Try to expand towards each candidate, use the best valid one
             Coordinate bestExpandedCoord = null;
             double bestDotProduct = -1;
+            double bestExpansionDistance = 0;
 
             for (PolygonDistance pd : nearbyPolygons) {
                 Polygon nearestPolygon = pd.polygon;
@@ -188,6 +192,7 @@ public class DBSCANClustererVisualisation {
                             if (dotProduct > bestDotProduct) {
                                 bestDotProduct = dotProduct;
                                 bestExpandedCoord = expandedCoord;
+                                bestExpansionDistance = toNeighborLength / 2.0;
                             }
                         }
                     }
@@ -197,17 +202,58 @@ public class DBSCANClustererVisualisation {
             // Use the best expansion found, or keep original if none worked
             if (bestExpandedCoord != null) {
                 expandedCoords.add(bestExpandedCoord);
+                expansionDistances.add(bestExpansionDistance);
             } else {
                 expandedCoords.add(coord);
+                expansionDistances.add(0.0);
+            }
+        }
+
+        // Calculate average expansion distance for points that didn't expand
+        double averageExpansion = expansionDistances.stream()
+                .filter(d -> d > 0)
+                .mapToDouble(Double::doubleValue)
+                .average()
+                .orElse(0.0);
+
+        // Apply average expansion to points that couldn't find a neighbor
+        List<Coordinate> finalCoords = new ArrayList<>();
+        for (int i = 0; i < expandedCoords.size(); i++) {
+            Coordinate coord = expandedCoords.get(i);
+            double expansion = expansionDistances.get(i);
+
+            if (expansion == 0.0 && averageExpansion > 0) {
+                // This point didn't expand, use average expansion in outward direction
+                Coordinate centerToCoord = new Coordinate(
+                        coord.x - centerCoord.x,
+                        coord.y - centerCoord.y
+                );
+                double distance = Math.sqrt(centerToCoord.x * centerToCoord.x + centerToCoord.y * centerToCoord.y);
+
+                if (distance > 0) {
+                    // Normalize and expand by average distance
+                    centerToCoord.x /= distance;
+                    centerToCoord.y /= distance;
+
+                    Coordinate expandedCoord = new Coordinate(
+                            coord.x + centerToCoord.x * averageExpansion,
+                            coord.y + centerToCoord.y * averageExpansion
+                    );
+                    finalCoords.add(expandedCoord);
+                } else {
+                    finalCoords.add(coord);
+                }
+            } else {
+                finalCoords.add(coord);
             }
         }
 
         // Close the ring
-        if (!expandedCoords.get(0).equals2D(expandedCoords.get(expandedCoords.size() - 1))) {
-            expandedCoords.add(expandedCoords.get(0));
+        if (!finalCoords.get(0).equals2D(finalCoords.get(finalCoords.size() - 1))) {
+            finalCoords.add(finalCoords.get(0));
         }
 
-        LinearRing ring = geometryFactory.createLinearRing(expandedCoords.toArray(new Coordinate[0]));
+        LinearRing ring = geometryFactory.createLinearRing(finalCoords.toArray(new Coordinate[0]));
         Polygon polygon = geometryFactory.createPolygon(ring);
 
         polygon = simplifyPolygon(polygon, currentPolygon, allPolygons, currentIndex);
