@@ -106,18 +106,39 @@ public class DBSCANClustererVisualisation {
                                                 List<Coordinate> coords, GeometryFactory geometryFactory) {
         List<Coordinate> expandedCoords = new ArrayList<>();
 
+        // Get the center of the current polygon
+        Coordinate centerCoord = currentPolygon.getCentroid().getCoordinate();
+
         for (Coordinate coord : coords) {
             Point point = geometryFactory.createPoint(coord);
 
-        // Find closest polygon for THIS specific coordinate
-        double minDistance = Double.MAX_VALUE;
-        Polygon nearestPolygon = null;
+            // Vector from center to this coordinate (outward direction)
+            double outwardX = coord.x - centerCoord.x;
+            double outwardY = coord.y - centerCoord.y;
+            double outwardLength = Math.sqrt(outwardX * outwardX + outwardY * outwardY);
 
-        for (int i = 0; i < allPolygons.size(); i++) {
-            if (i == currentIndex) continue;
+            if (outwardLength == 0) {
+                expandedCoords.add(coord);
+                continue;
+            }
+
+            // Normalize the outward direction
+            outwardX /= outwardLength;
+            outwardY /= outwardLength;
+
+            // Find closest polygon for THIS specific coordinate
+            double minDistance = Double.MAX_VALUE;
+            Polygon nearestPolygon = null;
+            double maxCutoffDistance = 100; // Adjust this based on your coordinate scale
+
+            for (int i = 0; i < allPolygons.size(); i++) {
+                if (i == currentIndex) continue;
 
                 Polygon otherPolygon = allPolygons.get(i);
                 double distance = point.distance(otherPolygon);
+
+                // Only consider polygons within cutoff distance
+                if (distance > maxCutoffDistance) continue;
 
                 if (distance < minDistance) {
                     minDistance = distance;
@@ -129,14 +150,35 @@ public class DBSCANClustererVisualisation {
                 // Find closest point on nearest polygon's boundary
                 Coordinate closestPointOnNeighbor = findClosestPointOnPolygon(point, nearestPolygon);
 
-                // Move current point to midpoint between itself and the closest point
-                Coordinate expandedCoord = new Coordinate(
-                        (coord.x + closestPointOnNeighbor.x) / 2.0,
-                        (coord.y + closestPointOnNeighbor.y) / 2.0
-                );
-                expandedCoords.add(expandedCoord);
+                // Vector from coord to closest point on neighbor
+                double toNeighborX = closestPointOnNeighbor.x - coord.x;
+                double toNeighborY = closestPointOnNeighbor.y - coord.y;
+                double toNeighborLength = Math.sqrt(toNeighborX * toNeighborX + toNeighborY * toNeighborY);
+
+                if (toNeighborLength > 0) {
+                    // Normalize
+                    toNeighborX /= toNeighborLength;
+                    toNeighborY /= toNeighborLength;
+
+                    // Check if neighbor is in outward direction (dot product > 0)
+                    double dotProduct = outwardX * toNeighborX + outwardY * toNeighborY;
+
+                    if (dotProduct > 0) {
+                        // Neighbor is in outward direction, move to midpoint
+                        Coordinate expandedCoord = new Coordinate(
+                                (coord.x + closestPointOnNeighbor.x) / 2.0,
+                                (coord.y + closestPointOnNeighbor.y) / 2.0
+                        );
+                        expandedCoords.add(expandedCoord);
+                    } else {
+                        // Neighbor is in inward direction, keep original
+                        expandedCoords.add(coord);
+                    }
+                } else {
+                    expandedCoords.add(coord);
+                }
             } else {
-                // If no neighbor found, keep original coordinate
+                // No suitable neighbor found, keep original coordinate
                 expandedCoords.add(coord);
             }
         }
