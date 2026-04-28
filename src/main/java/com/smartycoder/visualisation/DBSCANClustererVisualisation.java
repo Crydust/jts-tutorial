@@ -16,6 +16,7 @@ import org.locationtech.jts.geom.MultiPoint;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
+import org.locationtech.jts.simplify.DouglasPeuckerSimplifier;
 import org.locationtech.jts.triangulate.VoronoiDiagramBuilder;
 
 import java.awt.Color;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.smartycoder.ui.VisualisationUtil.saveAsFile;
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 public class DBSCANClustererVisualisation {
 
@@ -101,19 +103,25 @@ public class DBSCANClustererVisualisation {
             if (!clusterVoronoiCells[clusterIdx].isEmpty()) {
                 Geometry g = CoverageUnion.union(clusterVoronoiCells[clusterIdx].toArray(new Polygon[0]));
                 if (g instanceof Polygon merged) {
-                    drawingCommands.add(new DrawPolygon(merged, Color.BLUE, null, null));
+                    // Simplify the geometry to remove jagged edges
+                    DouglasPeuckerSimplifier simplifier = new DouglasPeuckerSimplifier(merged);
+                    simplifier.setDistanceTolerance(25); // Adjust this value based on your needs
+                    Geometry simplified = simplifier.getResultGeometry();
+                    if (simplified instanceof Polygon simplifiedPolygon) {
+                        drawingCommands.add(new DrawPolygon(simplifiedPolygon, Color.BLUE, null, null));
+                    }
                 }
             }
         }
 
         drawingCommands.add(new DrawMultiPoint(multiPoint, Color.WHITE, null));
 
-        saveAsFile(Path.of("target/cluster.png"), drawingCommands.toArray(new DrawingCommand[0]));
+        saveAsFile(Path.of("cluster.png"), drawingCommands.toArray(new DrawingCommand[0]));
 
-//        show(
-//                "JTS Visualisation - Convex Hull",
-//                drawingCommands.toArray(new DrawingCommand[0])
-//        );
+        show(
+                "JTS Visualisation - Convex Hull",
+                drawingCommands.toArray(new DrawingCommand[0])
+        );
     }
 
 
