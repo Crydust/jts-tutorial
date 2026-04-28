@@ -58,6 +58,10 @@ public class DBSCANClustererVisualisation {
 
         // Expand polygons to midpoints between neighbors
         List<Polygon> expandedPolygons = expandPolygonsToMidpoints(clusterPolygons, geometryFactory);
+        // repeat for better coverage (this feels like a hack)
+        expandedPolygons = expandPolygonsToMidpoints(expandedPolygons, geometryFactory);
+        expandedPolygons = expandPolygonsToMidpoints(expandedPolygons, geometryFactory);
+        expandedPolygons = expandPolygonsToMidpoints(expandedPolygons, geometryFactory);
 
         for (Polygon expandedPolygon : expandedPolygons) {
             drawingCommands.add(new DrawPolygon(expandedPolygon, Color.BLUE, null, null));
