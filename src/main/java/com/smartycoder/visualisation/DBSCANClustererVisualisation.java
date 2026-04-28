@@ -7,24 +7,19 @@ import org.hipparchus.clustering.CentroidCluster;
 import org.hipparchus.clustering.Cluster;
 import org.hipparchus.clustering.Clusterable;
 import org.hipparchus.clustering.FuzzyKMeansClusterer;
-import org.locationtech.jts.coverage.CoverageUnion;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.MultiPoint;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
-import org.locationtech.jts.simplify.DouglasPeuckerSimplifier;
-import org.locationtech.jts.triangulate.VoronoiDiagramBuilder;
 
 import java.awt.Color;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.smartycoder.ui.VisualisationUtil.saveAsFile;
 import static com.smartycoder.ui.VisualisationUtil.show;
@@ -57,73 +52,119 @@ public class DBSCANClustererVisualisation {
 
         List<DrawingCommand> drawingCommands = new ArrayList<>();
         for (Polygon clusterPolygon : clusterPolygons) {
-            drawingCommands.add(new DrawPolygon(clusterPolygon, null, Color.GRAY, null));
+            drawingCommands.add(new DrawPolygon(clusterPolygon, Color.RED, null, null));
         }
 
-        // Create Voronoi diagram from ALL points
-        VoronoiDiagramBuilder voronoiBuilder = new VoronoiDiagramBuilder();
-        voronoiBuilder.setSites(coordinates);
-        Geometry voronoiDiagram = voronoiBuilder.getDiagram(geometryFactory);
+        // Expand polygons to midpoints between neighbors
+        List<Polygon> expandedPolygons = expandPolygonsToMidpoints(clusterPolygons, geometryFactory);
 
-        // Map each coordinate to its cluster index
-        Map<Coordinate, Integer> coordinateToCluster = new HashMap<>();
-        for (int clusterIdx = 0; clusterIdx < clusters.size(); clusterIdx++) {
-            Cluster<ClusterableCoordinate> cluster = clusters.get(clusterIdx);
-            for (ClusterableCoordinate cc : cluster.getPoints()) {
-                coordinateToCluster.put(cc.coordinate(), clusterIdx);
-            }
-        }
-
-        // Group Voronoi cells by cluster and merge them
-        @SuppressWarnings("unchecked")
-        List<Polygon>[] clusterVoronoiCells = new List[clusters.size()];
-        for (int i = 0; i < clusters.size(); i++) {
-            clusterVoronoiCells[i] = new ArrayList<>();
-        }
-
-        if (voronoiDiagram instanceof GeometryCollection geometryCollection) {
-            for (int i = 0; i < geometryCollection.getNumGeometries(); i++) {
-                Polygon voronoiCell = (Polygon) geometryCollection.getGeometryN(i);
-                // Find which cluster this Voronoi cell belongs to
-                // Find the contained point in coordinates to determine cluster
-                int clusterIdx = 0;
-                for (Coordinate coord : coordinates) {
-                    if (voronoiCell.contains(geometryFactory.createPoint(coord))) {
-                        clusterIdx = coordinateToCluster.getOrDefault(coord, 0);
-                        break;
-                    }
-                }
-
-                clusterVoronoiCells[clusterIdx].add(voronoiCell);
-            }
-        }
-
-        // Merge Voronoi cells for each cluster
-        for (int clusterIdx = 0; clusterIdx < clusters.size(); clusterIdx++) {
-            if (!clusterVoronoiCells[clusterIdx].isEmpty()) {
-                Geometry g = CoverageUnion.union(clusterVoronoiCells[clusterIdx].toArray(new Polygon[0]));
-                if (g instanceof Polygon merged) {
-                    // Simplify the geometry to remove jagged edges
-                    DouglasPeuckerSimplifier simplifier = new DouglasPeuckerSimplifier(merged);
-                    simplifier.setDistanceTolerance(25); // Adjust this value based on your needs
-                    Geometry simplified = simplifier.getResultGeometry();
-                    if (simplified instanceof Polygon simplifiedPolygon) {
-                        drawingCommands.add(new DrawPolygon(simplifiedPolygon, Color.BLUE, null, null));
-                    }
-                }
-            }
+        for (Polygon expandedPolygon : expandedPolygons) {
+            drawingCommands.add(new DrawPolygon(expandedPolygon, Color.BLUE, null, null));
         }
 
         drawingCommands.add(new DrawMultiPoint(multiPoint, Color.WHITE, null));
 
+        show("cluster", drawingCommands.toArray(new DrawingCommand[0]));
         saveAsFile(Path.of("cluster.png"), drawingCommands.toArray(new DrawingCommand[0]));
-
-        show(
-                "JTS Visualisation - Convex Hull",
-                drawingCommands.toArray(new DrawingCommand[0])
-        );
     }
 
+    private static List<Polygon> expandPolygonsToMidpoints(List<Polygon> polygons, GeometryFactory geometryFactory) {
+        List<Polygon> expandedPolygons = new ArrayList<>();
+
+        for (int i = 0; i < polygons.size(); i++) {
+            Polygon currentPolygon = polygons.get(i);
+            Coordinate[] coords = currentPolygon.getExteriorRing().getCoordinates();
+
+            // Split each edge into smaller segments
+            List<Coordinate> newCoords = new ArrayList<>();
+            for (int j = 0; j < coords.length - 1; j++) {
+                Coordinate start = coords[j];
+                Coordinate end = coords[j + 1];
+
+                newCoords.add(start);
+
+                // Add midpoints along the edge (segment into 4 parts = 3 midpoints)
+                for (int k = 1; k < 4; k++) {
+                    double t = k / 4.0;
+                    Coordinate midpoint = new Coordinate(
+                            start.x + t * (end.x - start.x),
+                            start.y + t * (end.y - start.y)
+                    );
+                    newCoords.add(midpoint);
+                }
+            }
+
+            // Find nearest neighbor polygon for each node
+            Polygon expandedPolygon = expandPolygonOutward(currentPolygon, polygons, i, newCoords, geometryFactory);
+            expandedPolygons.add(expandedPolygon);
+        }
+
+        return expandedPolygons;
+    }
+
+    private static Polygon expandPolygonOutward(Polygon currentPolygon, List<Polygon> allPolygons, int currentIndex,
+                                                List<Coordinate> coords, GeometryFactory geometryFactory) {
+        List<Coordinate> expandedCoords = new ArrayList<>();
+
+        for (Coordinate coord : coords) {
+            Point point = geometryFactory.createPoint(coord);
+
+            // Find closest polygon (nearest neighbor)
+            double minDistance = Double.MAX_VALUE;
+            Polygon nearestPolygon = null;
+
+            for (int i = 0; i < allPolygons.size(); i++) {
+                if (i == currentIndex) continue;
+
+                Polygon otherPolygon = allPolygons.get(i);
+                double distance = currentPolygon.distance(otherPolygon);
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestPolygon = otherPolygon;
+                }
+            }
+
+            if (nearestPolygon != null) {
+                // Find closest point on nearest polygon's boundary
+                Coordinate closestPointOnNeighbor = findClosestPointOnPolygon(point, nearestPolygon);
+
+                // Move current point to midpoint between itself and the closest point
+                Coordinate expandedCoord = new Coordinate(
+                        (coord.x + closestPointOnNeighbor.x) / 2.0,
+                        (coord.y + closestPointOnNeighbor.y) / 2.0
+                );
+                expandedCoords.add(expandedCoord);
+            } else {
+                // If no neighbor found, keep original coordinate
+                expandedCoords.add(coord);
+            }
+        }
+
+        // Close the ring
+        if (!expandedCoords.get(0).equals2D(expandedCoords.get(expandedCoords.size() - 1))) {
+            expandedCoords.add(expandedCoords.get(0));
+        }
+
+        LinearRing ring = geometryFactory.createLinearRing(expandedCoords.toArray(new Coordinate[0]));
+        return geometryFactory.createPolygon(ring);
+    }
+
+    private static Coordinate findClosestPointOnPolygon(Point point, Polygon polygon) {
+        Geometry boundary = polygon.getBoundary();
+        Coordinate closestPoint = boundary.getCoordinate();
+        double minDistance = point.distance(boundary.getFactory().createPoint(closestPoint));
+
+        for (Coordinate coord : boundary.getCoordinates()) {
+            double distance = point.distance(boundary.getFactory().createPoint(coord));
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestPoint = coord;
+            }
+        }
+
+        return closestPoint;
+    }
 
     private static Point[] coordinatesToPoints(int pointCount, List<Coordinate> coordinates, GeometryFactory geometryFactory) {
         Point[] points = new Point[pointCount];
@@ -139,6 +180,4 @@ public class DBSCANClustererVisualisation {
             return new double[]{coordinate.x, coordinate.y};
         }
     }
-
-
 }
