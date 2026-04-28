@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Random;
 
 public record RandomCoordinates(int minX, int maxX, int minY, int maxY) {
-    private static final Random RANDOM = new Random();
+    // Fixed seed for debugging reasons
+    private static final Random RANDOM = new Random(1);
 
     public List<Coordinate> generate(int count) {
         List<Coordinate> coords = new ArrayList<>(count);
