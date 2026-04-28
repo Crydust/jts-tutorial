@@ -109,15 +109,15 @@ public class DBSCANClustererVisualisation {
         for (Coordinate coord : coords) {
             Point point = geometryFactory.createPoint(coord);
 
-            // Find closest polygon (nearest neighbor)
-            double minDistance = Double.MAX_VALUE;
-            Polygon nearestPolygon = null;
+        // Find closest polygon for THIS specific coordinate
+        double minDistance = Double.MAX_VALUE;
+        Polygon nearestPolygon = null;
 
-            for (int i = 0; i < allPolygons.size(); i++) {
-                if (i == currentIndex) continue;
+        for (int i = 0; i < allPolygons.size(); i++) {
+            if (i == currentIndex) continue;
 
                 Polygon otherPolygon = allPolygons.get(i);
-                double distance = currentPolygon.distance(otherPolygon);
+                double distance = point.distance(otherPolygon);
 
                 if (distance < minDistance) {
                     minDistance = distance;
