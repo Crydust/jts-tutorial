@@ -1,5 +1,9 @@
 package com.smartycoder.ui;
 
+import org.eclipse.imagen.media.colorindexer.ColorIndexer;
+import org.eclipse.imagen.media.colorindexer.ColorUtils;
+import org.eclipse.imagen.media.colorindexer.Quantizer;
+
 import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
@@ -33,11 +37,45 @@ public final class VisualisationUtil {
 
     public static void saveAsFile(Path path, DrawingCommand... commands) {
         BufferedImage image = createImage(commands, false);
+        image = quantizeImage(image, 32);
         try {
             ImageIO.write(image, "PNG", path.toFile());
         } catch (IOException e) {
             throw new RuntimeException("Failed to save image to " + path, e);
         }
+    }
+
+    private static BufferedImage quantizeImage(BufferedImage image, int maxColors) {
+        if (image.getType() == BufferedImage.TYPE_BYTE_INDEXED) {
+            return image;
+        }
+
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        ColorIndexer colorIndexer = new Quantizer(maxColors).buildColorIndexer(image);
+
+        int[] pixels = new int[width * height];
+        image.getRGB(0, 0, width, height, pixels, 0, width);
+        byte[] indexes = new byte[width * height];
+        for (int i = 0; i < pixels.length; i++) {
+            int pixel = pixels[i];
+            int r = ColorUtils.red(pixel);
+            int g = ColorUtils.green(pixel);
+            int b = ColorUtils.blue(pixel);
+            int a = ColorUtils.alpha(pixel);
+            indexes[i] = (byte) (colorIndexer.getClosestIndex(r, g, b, a) & 0xFF);
+        }
+
+        BufferedImage indexedImage = new BufferedImage(
+                width,
+                height,
+                BufferedImage.TYPE_BYTE_INDEXED,
+                colorIndexer.toIndexColorModel()
+        );
+        indexedImage.getRaster().setDataElements(0, 0, width, height, indexes);
+
+        return indexedImage;
     }
 
     private static BufferedImage createImage(DrawingCommand[] commands, boolean drawAxis) {
