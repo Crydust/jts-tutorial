@@ -50,6 +50,7 @@ public class ClustererVisualisation {
             MultiPoint clusterMultiPoint = geometryFactory.createMultiPoint(new CoordinateArraySequence(clusterCoordinates));
             // Using length ratio (scale-free parameter)
             Polygon clusterPolygon = (Polygon) ConcaveHull.concaveHullByLengthRatio(clusterMultiPoint, 0.65);
+            // SEE PolygonHullSimplifier https://lin-ear-th-inking.blogspot.com/2022/04/outer-and-inner-concave-polygon-hulls.html
 //            Polygon clusterPolygon = (Polygon) clusterMultiPoint.convexHull();
             clusterPolygons.add(clusterPolygon);
         }
