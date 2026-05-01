@@ -7,6 +7,7 @@ import org.hipparchus.clustering.CentroidCluster;
 import org.hipparchus.clustering.Cluster;
 import org.hipparchus.clustering.Clusterable;
 import org.hipparchus.clustering.FuzzyKMeansClusterer;
+import org.locationtech.jts.algorithm.hull.ConcaveHull;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -25,7 +26,7 @@ import java.util.List;
 import static com.smartycoder.ui.VisualisationUtil.saveAsFile;
 import static com.smartycoder.ui.VisualisationUtil.show;
 
-public class DBSCANClustererVisualisation {
+public class ClustererVisualisation {
 
     public static void main(String[] args) {
         GeometryFactory geometryFactory = new GeometryFactory();
@@ -47,7 +48,9 @@ public class DBSCANClustererVisualisation {
                     .map(ClusterableCoordinate::coordinate)
                     .toArray(Coordinate[]::new);
             MultiPoint clusterMultiPoint = geometryFactory.createMultiPoint(new CoordinateArraySequence(clusterCoordinates));
-            Polygon clusterPolygon = (Polygon) clusterMultiPoint.convexHull();
+            // Using length ratio (scale-free parameter)
+            Polygon clusterPolygon = (Polygon) ConcaveHull.concaveHullByLengthRatio(clusterMultiPoint, 0.65);
+//            Polygon clusterPolygon = (Polygon) clusterMultiPoint.convexHull();
             clusterPolygons.add(clusterPolygon);
         }
 
@@ -57,7 +60,7 @@ public class DBSCANClustererVisualisation {
         }
 
         // Expand polygons to midpoints between neighbors
-        List<Polygon> expandedPolygons = expandPolygonsToMidpoints(clusterPolygons, geometryFactory);
+        List<Polygon> expandedPolygons = expandPolygons(clusterPolygons, geometryFactory);
         // repeat for better coverage (this feels like a hack)
 //        expandedPolygons = expandPolygonsToMidpoints(expandedPolygons, geometryFactory);
 //        expandedPolygons = expandPolygonsToMidpoints(expandedPolygons, geometryFactory);
@@ -73,11 +76,12 @@ public class DBSCANClustererVisualisation {
         saveAsFile(Path.of("cluster.png"), drawingCommands.toArray(new DrawingCommand[0]));
     }
 
-    private static List<Polygon> expandPolygonsToMidpoints(List<Polygon> polygons, GeometryFactory geometryFactory) {
+    private static List<Polygon> expandPolygons(List<Polygon> polygons, GeometryFactory geometryFactory) {
         List<Polygon> expandedPolygons = new ArrayList<>();
 
         for (int i = 0; i < polygons.size(); i++) {
             Polygon currentPolygon = polygons.get(i);
+            double desiredSegmentLength = currentPolygon.getLength() / 12;
             Coordinate[] coords = currentPolygon.getExteriorRing().getCoordinates();
 
             // Split each edge into smaller segments
@@ -88,8 +92,10 @@ public class DBSCANClustererVisualisation {
 
                 newCoords.add(start);
 
-                // Add midpoints along the edge (segment into 4 parts = 3 midpoints)
-                for (int k = 1; k < 4; k++) {
+                int midpointCount = (int) Math.ceil(start.distance(end) / desiredSegmentLength);
+
+                // Add midpoints along the edge
+                for (int k = 1; k < midpointCount; k++) {
                     double t = k / 4.0;
                     Coordinate midpoint = new Coordinate(
                             start.x + t * (end.x - start.x),
@@ -122,7 +128,7 @@ public class DBSCANClustererVisualisation {
             // Vector from center to this coordinate (outward direction)
             double outwardX = coord.x - centerCoord.x;
             double outwardY = coord.y - centerCoord.y;
-            double outwardLength = Math.sqrt(outwardX * outwardX + outwardY * outwardY);
+            double outwardLength = coord.distance(centerCoord);
 
             if (outwardLength == 0) {
                 expandedCoords.add(coord);
@@ -265,7 +271,7 @@ public class DBSCANClustererVisualisation {
                                            List<Polygon> allPolygons, int currentIndex) {
         // Simplify with a reasonable tolerance
         DouglasPeuckerSimplifier simplifier = new DouglasPeuckerSimplifier(polygon);
-        simplifier.setDistanceTolerance(10.0); // Adjust for more/less smoothing
+        simplifier.setDistanceTolerance(5.0); // Adjust for more/less smoothing
         Geometry simplified = simplifier.getResultGeometry();
 
         if (!(simplified instanceof Polygon simplifiedPolygon)) {
