@@ -79,7 +79,7 @@ public final class VisualisationUtil {
     }
 
     private static BufferedImage createImage(DrawingCommand[] commands, boolean drawAxis) {
-        int width = 600, height = 600;
+        int width = 700, height = 700;
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
         try {
@@ -87,20 +87,20 @@ public final class VisualisationUtil {
 
             // Draw background
             g.setColor(Color.DARK_GRAY);
-            g.fillRect(0, 0, 600, 600);
+            g.fillRect(0, 0, width, height);
 
             if (drawAxis) {
                 // Draw x axis
                 g.setColor(Color.WHITE);
-                g.drawLine(10, 10, 600, 10);
-                for (int i = 10; i <= 600; i += 50) {
+                g.drawLine(10, 10, width, 10);
+                for (int i = 10; i <= width; i += 50) {
                     g.drawString(Integer.toString(i), i, 10);
                 }
 
                 // Draw y axis
                 g.setColor(Color.WHITE);
-                g.drawLine(10, 10, 10, 600);
-                for (int i = 10; i <= 600; i += 50) {
+                g.drawLine(10, 10, 10, height);
+                for (int i = 10; i <= height; i += 50) {
                     g.drawString(Integer.toString(i), 10, i);
                 }
             }

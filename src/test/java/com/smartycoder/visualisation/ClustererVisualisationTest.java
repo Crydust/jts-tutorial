@@ -8,31 +8,27 @@ import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
 
+import java.awt.Color;
 import java.util.List;
 
 import static com.smartycoder.ui.VisualisationUtil.show;
 import static com.smartycoder.visualisation.ClustererVisualisation.bufferPolygons;
-import static java.awt.Color.BLUE;
-import static java.awt.Color.GREEN;
-import static java.awt.Color.RED;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClustererVisualisationTest {
 
     @Test
-    void shouldBbufferPolygons() throws ParseException {
-        // TODO test that the buffered Polygons:
-        //  * don't overlap
-        //  * fully contain the original polygon
-        //  * have no sharp edges
-        GeometryFactory geometryFactory = new GeometryFactory();
+    void shouldBufferPolygons() throws ParseException {
+        // Given
         WKTReader reader = new WKTReader();
         Polygon polygonA = (Polygon) reader.read("""
                 POLYGON ((
                     100 100, 400 100,
-                    400 250, 350 250,
+                    425 275, 320 250,
                     350 150, 150 150,
                     150 550, 350 550,
-                    350 500, 400 500,
+                    325 425, 425 500,
                     400 600, 100 600,
                     100 100
                 ))
@@ -43,22 +39,33 @@ class ClustererVisualisationTest {
                     300 300, 450 300,
                     450 100, 600 100,
                     600 600, 450 600,
-                    450 450, 300 450,
+                    450 450, 250 350,
                     300 500, 200 500,
                     200 200
                 ))
                 """);
-        List<Polygon> expandedPolygons = bufferPolygons(List.of(polygonA, polygonB), geometryFactory);
 
-        DrawingCommand[] drawingCommands = {
-                new DrawPolygon(polygonA, RED, null, null),
-                new DrawPolygon(polygonB, RED, null, null),
-                new DrawPolygon(expandedPolygons.get(0), BLUE, null, null),
-                new DrawPolygon(expandedPolygons.get(1), BLUE, null, null),
-        };
-        show(
-                "test",
-                drawingCommands);
+        // When
+        List<Polygon> expandedPolygons = bufferPolygons(List.of(polygonA, polygonB));
+        Polygon expandedA = expandedPolygons.get(0);
+        Polygon expandedB = expandedPolygons.get(1);
 
+        // Debug
+        boolean debug = true;
+        if (debug) {
+            DrawingCommand[] drawingCommands = {
+                    new DrawPolygon(polygonA, Color.RED, null, null),
+                    new DrawPolygon(polygonB, Color.RED, null, null),
+                    new DrawPolygon(expandedA, Color.BLUE, null, null),
+                    new DrawPolygon(expandedB, Color.GREEN, null, null),
+            };
+            show("test", drawingCommands);
+        }
+
+        // Then
+        assertFalse(expandedA.overlaps(expandedB), "The buffered polygons overlap");
+        assertTrue(expandedA.contains(polygonA), "The buffered polygon doesn't fully contain the original polygon");
+        assertTrue(expandedB.contains(polygonB), "The buffered polygon doesn't fully contain the original polygon");
+        // TODO check expandedA has no "sharp edges" aka angles less than 90 degrees
     }
 }

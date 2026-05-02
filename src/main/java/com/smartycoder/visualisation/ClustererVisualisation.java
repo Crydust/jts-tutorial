@@ -16,7 +16,6 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
 import org.locationtech.jts.simplify.PolygonHullSimplifier;
-import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
 
 import java.awt.Color;
 import java.nio.file.Path;
@@ -57,7 +56,7 @@ public class ClustererVisualisation {
         }
 
         // This line can be completely changed:
-        List<Polygon> expandedPolygons = bufferPolygons(clusterPolygons, geometryFactory);
+        List<Polygon> expandedPolygons = bufferPolygons(clusterPolygons);
 
         for (Polygon expandedPolygon : expandedPolygons) {
             drawingCommands.add(new DrawPolygon(expandedPolygon, Color.BLUE, null, null));
@@ -77,7 +76,7 @@ public class ClustererVisualisation {
         return points;
     }
 
-    static List<Polygon> bufferPolygons(List<Polygon> polygons, GeometryFactory geometryFactory) {
+    static List<Polygon> bufferPolygons(List<Polygon> polygons) {
         double bufferDistance = 15.0; // Distance for expansion
 
         // First pass: buffer all polygons to expand them
