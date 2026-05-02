@@ -77,7 +77,7 @@ public class ClustererVisualisation {
         return points;
     }
 
-    private static List<Polygon> bufferPolygons(List<Polygon> polygons, GeometryFactory geometryFactory) {
+    static List<Polygon> bufferPolygons(List<Polygon> polygons, GeometryFactory geometryFactory) {
         double bufferDistance = 15.0; // Distance for expansion
 
         // First pass: buffer all polygons to expand them
