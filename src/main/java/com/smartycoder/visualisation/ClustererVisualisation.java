@@ -15,6 +15,7 @@ import org.locationtech.jts.geom.MultiPoint;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
+import org.locationtech.jts.simplify.PolygonHullSimplifier;
 import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
 
 import java.awt.Color;
@@ -77,46 +78,36 @@ public class ClustererVisualisation {
     }
 
     private static List<Polygon> bufferPolygons(List<Polygon> polygons, GeometryFactory geometryFactory) {
-        double bufferDistance = 10.0; // Fixed buffer distance for simplicity; adjust as needed
-
-        List<Polygon> buffered = new ArrayList<>();
-        for (Polygon p : polygons) {
-            Geometry buf = p.buffer(bufferDistance);
-            if (buf instanceof Polygon bp) {
-                buffered.add(bp);
-            } else {
-                buffered.add(p); // Fallback if buffer is not a polygon
-            }
-        }
+        double hullDistance = 10.0; // Distance for outer hull expansion and smoothing
 
         List<Polygon> result = new ArrayList<>();
-        for (int i = 0; i < buffered.size(); i++) {
-            Polygon current = buffered.get(i);
 
-            // Difference with all other buffered polygons to prevent overlap
-            for (int j = 0; j < buffered.size(); j++) {
+        for (int i = 0; i < polygons.size(); i++) {
+            Polygon original = polygons.get(i);
+
+            // Generate outer hull using PolygonHullSimplifier
+            // This expands and smooths the polygon in one operation
+            Geometry hullGeometry = PolygonHullSimplifier.hull(original, true, hullDistance);
+            Polygon current = (hullGeometry instanceof Polygon p) ? p : original;
+
+            // Difference with all other outer hulls to prevent overlap
+            for (int j = 0; j < polygons.size(); j++) {
                 if (i != j) {
-                    Geometry diff = current.difference(buffered.get(j));
+                    Geometry otherHullGeometry = PolygonHullSimplifier.hull(polygons.get(j), true, hullDistance);
+                    Polygon otherHull = (otherHullGeometry instanceof Polygon p) ? p : polygons.get(j);
+                    Geometry diff = current.difference(otherHull);
                     if (diff instanceof Polygon dp) {
                         current = dp;
                     }
                 }
             }
 
-            // Smooth the polygon
-            TopologyPreservingSimplifier simplifier = new TopologyPreservingSimplifier(current);
-            simplifier.setDistanceTolerance(5.0);
-            Geometry simplified = simplifier.getResultGeometry();
-            if (simplified instanceof Polygon sp) {
-                current = sp;
-            }
-
             // Union with original polygon to ensure all cluster points are contained
-            Geometry unioned = current.union(polygons.get(i));
+            Geometry unioned = current.union(original);
             if (unioned instanceof Polygon up) {
                 result.add(up);
             } else {
-                result.add(polygons.get(i)); // Fallback
+                result.add(original); // Fallback
             }
         }
 
