@@ -78,36 +78,46 @@ public class ClustererVisualisation {
     }
 
     private static List<Polygon> bufferPolygons(List<Polygon> polygons, GeometryFactory geometryFactory) {
-        double hullDistance = 10.0; // Distance for outer hull expansion and smoothing
+        double bufferDistance = 15.0; // Distance for expansion
+
+        // First pass: buffer all polygons to expand them
+        List<Polygon> buffered = new ArrayList<>();
+        for (Polygon p : polygons) {
+            Geometry buf = p.buffer(bufferDistance);
+            if (buf instanceof Polygon bp) {
+                buffered.add(bp);
+            } else {
+                buffered.add(p);
+            }
+        }
 
         List<Polygon> result = new ArrayList<>();
+        for (int i = 0; i < buffered.size(); i++) {
+            Polygon current = buffered.get(i);
 
-        for (int i = 0; i < polygons.size(); i++) {
-            Polygon original = polygons.get(i);
-
-            // Generate outer hull using PolygonHullSimplifier
-            // This expands and smooths the polygon in one operation
-            Geometry hullGeometry = PolygonHullSimplifier.hull(original, true, hullDistance);
-            Polygon current = (hullGeometry instanceof Polygon p) ? p : original;
-
-            // Difference with all other outer hulls to prevent overlap
-            for (int j = 0; j < polygons.size(); j++) {
+            // Difference with all other buffered polygons to prevent overlap
+            for (int j = 0; j < buffered.size(); j++) {
                 if (i != j) {
-                    Geometry otherHullGeometry = PolygonHullSimplifier.hull(polygons.get(j), true, hullDistance);
-                    Polygon otherHull = (otherHullGeometry instanceof Polygon p) ? p : polygons.get(j);
-                    Geometry diff = current.difference(otherHull);
+                    Geometry diff = current.difference(buffered.get(j));
                     if (diff instanceof Polygon dp) {
                         current = dp;
                     }
                 }
             }
 
+            // Apply PolygonHullSimplifier for smoothing after differencing
+            // This improves the shape while maintaining the expansion
+            Geometry smoothed = PolygonHullSimplifier.hull(current, true, 3.0);
+            if (smoothed instanceof Polygon sp) {
+                current = sp;
+            }
+
             // Union with original polygon to ensure all cluster points are contained
-            Geometry unioned = current.union(original);
+            Geometry unioned = current.union(polygons.get(i));
             if (unioned instanceof Polygon up) {
                 result.add(up);
             } else {
-                result.add(original); // Fallback
+                result.add(polygons.get(i));
             }
         }
 
