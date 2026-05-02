@@ -3,7 +3,9 @@ package com.smartycoder.visualisation;
 import com.smartycoder.ui.DrawPolygon;
 import com.smartycoder.ui.DrawingCommand;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.algorithm.Angle;
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.LineSegment;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
@@ -88,25 +90,7 @@ class ClustererVisualisationTest {
             Coordinate next = coords[(i + 1) % n];
 
             // Calculate vectors from current point to previous and next
-            double v1x = prev.x - curr.x;
-            double v1y = prev.y - curr.y;
-            double v2x = next.x - curr.x;
-            double v2y = next.y - curr.y;
-
-            // Calculate dot product and magnitudes
-            double dotProduct = v1x * v2x + v1y * v2y;
-            double mag1 = Math.sqrt(v1x * v1x + v1y * v1y);
-            double mag2 = Math.sqrt(v2x * v2x + v2y * v2y);
-
-            if (mag1 == 0 || mag2 == 0) {
-                continue; // Skip degenerate cases
-            }
-
-            // Calculate the interior angle using dot product
-            double cosAngle = dotProduct / (mag1 * mag2);
-            // Clamp to avoid numerical errors
-            cosAngle = Math.max(-1.0, Math.min(1.0, cosAngle));
-            double angleRadians = Math.acos(cosAngle);
+            double angleRadians = Angle.angleBetween(prev, curr, next);
             double angleDegrees = Math.toDegrees(angleRadians);
 
             // If angle is less than 90 degrees, it's a sharp edge
