@@ -108,8 +108,8 @@ class ClustererVisualisationTest {
     }
 
     /**
-     * Verifies that pockets between polygon pairs have been eradicated.
-     * After smoothing, pockets that were below 1% threshold should be gone (area near 0).
+     * Verifies that pockets between polygon pairs do not exceed the specified percentage threshold
+     * of the source polygons' area.
      */
     private static void verifyPocketsWithinThreshold(List<Polygon> sourcePolygons, List<Polygon> expandedPolygons, double threshold) {
         for (int i = 0; i < expandedPolygons.size(); i++) {
@@ -126,12 +126,9 @@ class ClustererVisualisationTest {
                     double minSourceArea = Math.min(sourceArea1, sourceArea2);
                     double pocketSizePercent = pocket.getArea() / minSourceArea;
 
-                    // Pockets below 1% should be eradicated (area should be very small)
-                    // Allow tiny remnants due to floating point precision
-                    assertTrue(pocketSizePercent < threshold * 10,
-                            "Pocket between polygon " + i + " and " + j + " was not eradicated. " +
-                            "Expected near 0, but got " + String.format("%.3f%%", pocketSizePercent * 100) +
-                            " (threshold was " + (threshold * 100) + "%)");
+                    assertTrue(pocketSizePercent <= threshold,
+                            "Pocket between polygon " + i + " and " + j + " exceeds " + (threshold * 100) +
+                            "% threshold: " + String.format("%.3f%%", pocketSizePercent * 100));
                 }
             }
         }
