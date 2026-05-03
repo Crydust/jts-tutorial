@@ -5,7 +5,6 @@ import com.smartycoder.ui.DrawingCommand;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.algorithm.Angle;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.LineSegment;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
@@ -56,7 +55,7 @@ class ClustererVisualisationTest {
         Polygon expandedB = expandedPolygons.get(1);
 
         // Debug
-        boolean debug = false;
+        boolean debug = true;
         if (debug) {
             DrawingCommand[] drawingCommands = {
                     new DrawPolygon(polygonA, Color.RED, null, null),
@@ -72,15 +71,16 @@ class ClustererVisualisationTest {
         assertFalse(expandedA.overlaps(expandedB), "The buffered polygons overlap");
         assertTrue(expandedA.contains(polygonA), "The buffered polygon doesn't fully contain the original polygon");
         assertTrue(expandedB.contains(polygonB), "The buffered polygon doesn't fully contain the original polygon");
-//        assertTrue(hasNoSharpEdges(expandedA), "expandedA has sharp edges (angles less than 90 degrees)");
-//        assertTrue(hasNoSharpEdges(expandedB), "expandedB has sharp edges (angles less than 90 degrees)");
+        // We'll look into rounding the sharp edges at a later time
+//        assertTrue(hasNoSharpEdges(expandedA, 90), "expandedA has sharp edges (angles less than n degrees)");
+//        assertTrue(hasNoSharpEdges(expandedB, 90), "expandedB has sharp edges (angles less than n degrees)");
     }
 
     /**
-     * Checks if a polygon has no sharp edges by verifying all interior angles are >= 90 degrees.
-     * Returns true if all angles are >= 90 degrees, false otherwise.
+     * Checks if a polygon has no sharp edges by verifying all interior angles are >= threshold degrees.
+     * Returns true if all angles are >= threshold degrees, false otherwise.
      */
-    private static boolean hasNoSharpEdges(Polygon polygon) {
+    private static boolean hasNoSharpEdges(Polygon polygon, double threshold) {
         Coordinate[] coords = polygon.getExteriorRing().getCoordinates();
         int n = coords.length - 1; // Exclude the repeated closing coordinate
 
@@ -93,8 +93,8 @@ class ClustererVisualisationTest {
             double angleRadians = Angle.angleBetween(prev, curr, next);
             double angleDegrees = Math.toDegrees(angleRadians);
 
-            // If angle is less than 90 degrees, it's a sharp edge
-            if (angleDegrees < 90.0) {
+            // If angle is less than threshold degrees, it's a sharp edge
+            if (angleDegrees < threshold) {
                 return false;
             }
         }
