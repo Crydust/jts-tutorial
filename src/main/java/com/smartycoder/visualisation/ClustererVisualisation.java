@@ -12,6 +12,7 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.MultiPoint;
+import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
@@ -23,7 +24,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.smartycoder.ui.VisualisationUtil.colorWithAlpha;
 import static com.smartycoder.ui.VisualisationUtil.saveAsFile;
+import static com.smartycoder.ui.VisualisationUtil.show;
 
 public class ClustererVisualisation {
 
@@ -60,12 +63,12 @@ public class ClustererVisualisation {
         List<Polygon> expandedPolygons = bufferPolygons(clusterPolygons);
 
         for (Polygon expandedPolygon : expandedPolygons) {
-            drawingCommands.add(new DrawPolygon(expandedPolygon, Color.BLUE, null, null));
+            drawingCommands.add(new DrawPolygon(expandedPolygon, Color.BLUE, colorWithAlpha(Color.BLUE, 20), null));
         }
 
         drawingCommands.add(new DrawMultiPoint(multiPoint, Color.WHITE, null));
 
-//        show("cluster", drawingCommands.toArray(new DrawingCommand[0]));
+        show("cluster", drawingCommands.toArray(new DrawingCommand[0]));
         saveAsFile(Path.of("cluster.png"), drawingCommands.toArray(new DrawingCommand[0]));
     }
 
@@ -78,12 +81,19 @@ public class ClustererVisualisation {
     }
 
     static List<Polygon> bufferPolygons(List<Polygon> polygons) {
-        double bufferDistance = 15.0; // Distance for expansion
+        double desiredufferDistance = 15.0; // Distance for expansion
 
         // First pass: buffer all polygons to expand them
         List<Polygon> buffered = new ArrayList<>();
         for (Polygon p : polygons) {
-            Geometry buf = p.buffer(bufferDistance);
+            // Buffer by less than the distance to the nearest other polygon
+            double actualBufferDistance = desiredufferDistance;
+            for (Polygon other : polygons) {
+                if (other == p) continue;
+                actualBufferDistance = Math.min(p.distance(other) / 1.3, actualBufferDistance);
+            }
+
+            Geometry buf = p.buffer(actualBufferDistance);
             if (buf instanceof Polygon bp) {
                 buffered.add(bp);
             } else {
@@ -95,6 +105,12 @@ public class ClustererVisualisation {
         for (int i = 0; i < buffered.size(); i++) {
             Polygon current = buffered.get(i);
 
+            // Apply PolygonHullSimplifier for smoothing
+            Geometry smoothed = PolygonHullSimplifier.hull(current, true, 0.5 /* between 0 and 1 */);
+            if (smoothed instanceof Polygon sp) {
+                current = sp;
+            }
+
             // Difference with all other buffered polygons to prevent overlap
             for (int j = 0; j < buffered.size(); j++) {
                 if (i != j) {
@@ -105,11 +121,6 @@ public class ClustererVisualisation {
                 }
             }
 
-            // Apply PolygonHullSimplifier for smoothing after differencing
-            Geometry smoothed = PolygonHullSimplifier.hull(current, true, 3.0);
-            if (smoothed instanceof Polygon sp) {
-                current = sp;
-            }
             buffered.set(i, current);
         }
 
@@ -121,11 +132,10 @@ public class ClustererVisualisation {
                     // Snap vertices of buffered(i) to buffered(j) if they are within 5.0 units
                     // This creates a shared boundary instead of a small gap
                     Geometry[] snapped = GeometrySnapper.snap(buffered.get(i), buffered.get(j), 5.0);
-                    if (snapped[0] instanceof Polygon sp) {
-                        buffered.set(i, sp);
-                    }
-                    if (snapped[1] instanceof Polygon sp) {
-                        buffered.set(j, sp);
+                    if (!(snapped[0] instanceof MultiPolygon) && snapped[0] instanceof Polygon spi
+                            && !(snapped[1] instanceof MultiPolygon) && snapped[1] instanceof Polygon spj) {
+                        buffered.set(i, spi);
+                        buffered.set(j, spj);
                     }
                 }
             }

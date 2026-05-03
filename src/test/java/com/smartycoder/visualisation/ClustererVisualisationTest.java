@@ -74,8 +74,8 @@ class ClustererVisualisationTest {
 
         assertNoSmallGaps(expandedA, expandedB);
         // We'll look into rounding the sharp edges at a later time
-//        assertTrue(hasNoSharpEdges(expandedA, 90), "expandedA has sharp edges (angles less than n degrees)");
-//        assertTrue(hasNoSharpEdges(expandedB, 90), "expandedB has sharp edges (angles less than n degrees)");
+        assertTrue(hasNoSharpEdges(expandedA, 90), "expandedA has sharp edges (angles less than n degrees)");
+        assertTrue(hasNoSharpEdges(expandedB, 90), "expandedB has sharp edges (angles less than n degrees)");
     }
 
     private void assertNoSmallGaps(Polygon p1, Polygon p2) {
