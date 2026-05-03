@@ -121,14 +121,15 @@ public class ClustererVisualisation {
         }
 
         // Fill pockets between adjacent polygons
-        result = smoothPockets(polygons, result);
+//        result = smoothPockets(polygons, result);
 
         return result;
     }
 
     /**
      * Detects and fills small gaps (pockets) between nearby polygon pairs.
-     * Pockets below 1% threshold are eradicated only if filling doesn't create overlap.
+     * Pockets below 1% threshold are eradicated by filling with their convex hull.
+     * Polygons are allowed to touch at boundaries (non-overlapping means interior overlap not allowed).
      */
     static List<Polygon> smoothPockets(List<Polygon> sourcePolygons, List<Polygon> expandedPolygons) {
         double pocketThresholdPercent = 0.01; // 1% threshold
@@ -156,7 +157,8 @@ public class ClustererVisualisation {
                                 // Try filling pocket into p1
                                 Polygon testFill1 = (Polygon) p1.union(fp);
 
-                                // Only accept if it doesn't create new overlap
+                                // Only accept if it doesn't create interior overlap with p2
+                                // Note: overlaps() returns false for touching boundaries, allowing polygons to touch
                                 if (!testFill1.overlaps(p2)) {
                                     result.set(i, testFill1);
                                 } else {
