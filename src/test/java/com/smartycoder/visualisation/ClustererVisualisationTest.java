@@ -60,10 +60,10 @@ class ClustererVisualisationTest {
             DrawingCommand[] drawingCommands = {
                     new DrawPolygon(polygonA, Color.RED, null, null),
                     new DrawPolygon(polygonB, Color.RED, null, null),
-                    new DrawPolygon(expandedA, Color.BLUE, colorWithAlpha(Color.BLUE, 30), null),
-                    new DrawPolygon(expandedB, Color.BLUE, colorWithAlpha(Color.BLUE, 30), null),
+                    new DrawPolygon(expandedA, Color.BLUE, colorWithAlpha(Color.BLUE, 20), null),
+                    new DrawPolygon(expandedB, Color.GREEN, colorWithAlpha(Color.GREEN, 20), null),
             };
-            show("test", drawingCommands);
+            //show("test", drawingCommands);
             saveAsFile(Path.of("test.png"), drawingCommands);
         }
 
@@ -71,9 +71,38 @@ class ClustererVisualisationTest {
         assertFalse(expandedA.overlaps(expandedB), "The buffered polygons overlap");
         assertTrue(expandedA.contains(polygonA), "The buffered polygon doesn't fully contain the original polygon");
         assertTrue(expandedB.contains(polygonB), "The buffered polygon doesn't fully contain the original polygon");
+
+        assertNoSmallGaps(expandedA, expandedB);
         // We'll look into rounding the sharp edges at a later time
 //        assertTrue(hasNoSharpEdges(expandedA, 90), "expandedA has sharp edges (angles less than n degrees)");
 //        assertTrue(hasNoSharpEdges(expandedB, 90), "expandedB has sharp edges (angles less than n degrees)");
+    }
+
+    private void assertNoSmallGaps(Polygon p1, Polygon p2) {
+        Coordinate[] coords1 = p1.getExteriorRing().getCoordinates();
+        Coordinate[] coords2 = p2.getExteriorRing().getCoordinates();
+
+        boolean gapFound = false;
+        double maxGapDistance = 0;
+
+        // Check if any vertex of p1 is "close but not touching" p2
+        for (Coordinate c : coords1) {
+            double dist = p2.distance(p1.getFactory().createPoint(c));
+            if (dist > 0.001 && dist < 5.0) {
+                gapFound = true;
+                maxGapDistance = Math.max(maxGapDistance, dist);
+            }
+        }
+        // And vice versa
+        for (Coordinate c : coords2) {
+            double dist = p1.distance(p2.getFactory().createPoint(c));
+            if (dist > 0.001 && dist < 5.0) {
+                gapFound = true;
+                maxGapDistance = Math.max(maxGapDistance, dist);
+            }
+        }
+
+        assertFalse(gapFound, "Found a small gap between polygons. Max gap distance: " + maxGapDistance);
     }
 
     /**

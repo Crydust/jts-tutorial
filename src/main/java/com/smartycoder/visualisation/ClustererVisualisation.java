@@ -15,6 +15,7 @@ import org.locationtech.jts.geom.MultiPoint;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
+import org.locationtech.jts.operation.overlay.snap.GeometrySnapper;
 import org.locationtech.jts.simplify.PolygonHullSimplifier;
 
 import java.awt.Color;
@@ -90,7 +91,7 @@ public class ClustererVisualisation {
             }
         }
 
-        List<Polygon> result = new ArrayList<>();
+        // Second pass: difference and simplify
         for (int i = 0; i < buffered.size(); i++) {
             Polygon current = buffered.get(i);
 
@@ -105,14 +106,35 @@ public class ClustererVisualisation {
             }
 
             // Apply PolygonHullSimplifier for smoothing after differencing
-            // This improves the shape while maintaining the expansion
             Geometry smoothed = PolygonHullSimplifier.hull(current, true, 3.0);
             if (smoothed instanceof Polygon sp) {
                 current = sp;
             }
+            buffered.set(i, current);
+        }
 
+        // Third pass: Remove small gaps by snapping
+        // This replaces "inward bulges" with segments that touch the other polygon
+        for (int i = 0; i < buffered.size(); i++) {
+            for (int j = 0; j < buffered.size(); j++) {
+                if (i != j) {
+                    // Snap vertices of buffered(i) to buffered(j) if they are within 5.0 units
+                    // This creates a shared boundary instead of a small gap
+                    Geometry[] snapped = GeometrySnapper.snap(buffered.get(i), buffered.get(j), 5.0);
+                    if (snapped[0] instanceof Polygon sp) {
+                        buffered.set(i, sp);
+                    }
+                    if (snapped[1] instanceof Polygon sp) {
+                        buffered.set(j, sp);
+                    }
+                }
+            }
+        }
+
+        List<Polygon> result = new ArrayList<>();
+        for (int i = 0; i < buffered.size(); i++) {
             // Union with original polygon to ensure all cluster points are contained
-            Geometry unioned = current.union(polygons.get(i));
+            Geometry unioned = buffered.get(i).union(polygons.get(i));
             if (unioned instanceof Polygon up) {
                 result.add(up);
             } else {
