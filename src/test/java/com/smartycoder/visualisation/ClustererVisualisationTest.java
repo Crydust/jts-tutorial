@@ -17,6 +17,7 @@ import static com.smartycoder.ui.VisualisationUtil.colorWithAlpha;
 import static com.smartycoder.ui.VisualisationUtil.saveAsFile;
 import static com.smartycoder.ui.VisualisationUtil.show;
 import static com.smartycoder.visualisation.ClustererVisualisation.bufferPolygons;
+import static com.smartycoder.visualisation.ClustererVisualisation.findPocket;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -54,6 +55,9 @@ class ClustererVisualisationTest {
         Polygon expandedA = expandedPolygons.get(0);
         Polygon expandedB = expandedPolygons.get(1);
 
+        // Then - verify pockets don't exceed 1% of neighbors
+        verifyPocketsWithinThreshold(List.of(polygonA, polygonB), List.of(expandedA, expandedB), 0.01);
+
         // Debug
         boolean debug = true;
         if (debug) {
@@ -63,7 +67,7 @@ class ClustererVisualisationTest {
                     new DrawPolygon(expandedA, Color.BLUE, colorWithAlpha(Color.BLUE, 30), null),
                     new DrawPolygon(expandedB, Color.BLUE, colorWithAlpha(Color.BLUE, 30), null),
             };
-            show("test", drawingCommands);
+            //show("test", drawingCommands);
             saveAsFile(Path.of("test.png"), drawingCommands);
         }
 
@@ -71,7 +75,8 @@ class ClustererVisualisationTest {
         assertFalse(expandedA.overlaps(expandedB), "The buffered polygons overlap");
         assertTrue(expandedA.contains(polygonA), "The buffered polygon doesn't fully contain the original polygon");
         assertTrue(expandedB.contains(polygonB), "The buffered polygon doesn't fully contain the original polygon");
-        // We'll look into rounding the sharp edges at a later time
+        // TODO Detect little "pockets" where both polygons bulge inward
+        // TODO We'll look into rounding the sharp edges at a later time
 //        assertTrue(hasNoSharpEdges(expandedA, 90), "expandedA has sharp edges (angles less than n degrees)");
 //        assertTrue(hasNoSharpEdges(expandedB, 90), "expandedB has sharp edges (angles less than n degrees)");
     }
@@ -100,5 +105,32 @@ class ClustererVisualisationTest {
         }
 
         return true;
+    }
+
+    /**
+     * Verifies that pockets between polygon pairs do not exceed the specified percentage threshold
+     * of the source polygons' area.
+     */
+    private static void verifyPocketsWithinThreshold(List<Polygon> sourcePolygons, List<Polygon> expandedPolygons, double threshold) {
+        for (int i = 0; i < expandedPolygons.size(); i++) {
+            for (int j = i + 1; j < expandedPolygons.size(); j++) {
+                Polygon expanded1 = expandedPolygons.get(i);
+                Polygon expanded2 = expandedPolygons.get(j);
+                Polygon source1 = sourcePolygons.get(i);
+                Polygon source2 = sourcePolygons.get(j);
+
+                org.locationtech.jts.geom.Geometry pocket = findPocket(expanded1, expanded2);
+                if (pocket != null && pocket.getArea() > 0) {
+                    double sourceArea1 = source1.getArea();
+                    double sourceArea2 = source2.getArea();
+                    double minSourceArea = Math.min(sourceArea1, sourceArea2);
+                    double pocketSizePercent = pocket.getArea() / minSourceArea;
+
+                    assertTrue(pocketSizePercent <= threshold,
+                            "Pocket between polygon " + i + " and " + j + " exceeds " + (threshold * 100) +
+                            "% threshold: " + String.format("%.3f%%", pocketSizePercent * 100));
+                }
+            }
+        }
     }
 }
