@@ -16,6 +16,8 @@ import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
+import org.locationtech.jts.operation.buffer.BufferOp;
+import org.locationtech.jts.operation.buffer.BufferParameters;
 import org.locationtech.jts.operation.overlay.snap.GeometrySnapper;
 import org.locationtech.jts.simplify.PolygonHullSimplifier;
 
@@ -93,9 +95,17 @@ public class ClustererVisualisation {
                 actualBufferDistance = Math.min(p.distance(other) / 1.3, actualBufferDistance);
             }
 
-            Geometry buf = p.buffer(actualBufferDistance);
+            // Use BufferParameters to ensure rounded joins (arcs) at corners
+            BufferParameters bufferParameters = new BufferParameters();
+            bufferParameters.setJoinStyle(BufferParameters.JOIN_ROUND);
+            bufferParameters.setEndCapStyle(BufferParameters.CAP_ROUND);
+            bufferParameters.setSimplifyFactor(0.1);
+            // bufferParameters.setQuadrantSegments(8);
+            // bufferParameters.setMitreLimit(0.5);
+            // bufferParameters.setSingleSided(true);
+            BufferOp bufferOp = new BufferOp(p, bufferParameters);
+            Geometry buf = bufferOp.getResultGeometry(actualBufferDistance);
             if (buf instanceof Polygon bp) {
-                // round sharp edges here? we could introduce an arc on the node where a sharp corner currently is. Maybe with a radius equal to actualBufferDistance?
                 buffered.add(bp);
             } else {
                 buffered.add(p);
