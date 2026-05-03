@@ -95,6 +95,7 @@ public class ClustererVisualisation {
 
             Geometry buf = p.buffer(actualBufferDistance);
             if (buf instanceof Polygon bp) {
+                // round sharp edges here? we could introduce an arc on the node where a sharp corner currently is. Maybe with a radius equal to actualBufferDistance?
                 buffered.add(bp);
             } else {
                 buffered.add(p);
